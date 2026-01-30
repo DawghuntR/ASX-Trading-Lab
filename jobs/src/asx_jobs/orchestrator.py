@@ -6,10 +6,12 @@ from datetime import datetime
 from asx_jobs.config import Config
 from asx_jobs.database import Database
 from asx_jobs.jobs.base import JobResult
+from asx_jobs.jobs.compute_reactions import ComputeReactionsJob
 from asx_jobs.jobs.ingest_announcements import IngestAnnouncementsJob
 from asx_jobs.jobs.ingest_prices import BackfillPricesJob, IngestPricesJob
 from asx_jobs.jobs.ingest_symbols import IngestSymbolsJob
 from asx_jobs.logging import get_logger
+from asx_jobs.observability import DataQualityMonitor, JobRunTracker
 from asx_jobs.providers.yahoo import YahooFinanceProvider
 from asx_jobs.signals.price_movement import PriceMovementSignalJob
 from asx_jobs.signals.volatility import VolatilitySpikeSignalJob
@@ -49,6 +51,8 @@ class JobOrchestrator:
         self.config = config
         self.db = Database(config.supabase)
         self.provider = YahooFinanceProvider(config.yahoo)
+        self.job_tracker = JobRunTracker(self.db)
+        self.quality_monitor = DataQualityMonitor(self.db)
 
     def run_daily(self) -> OrchestratorResult:
         """Run all daily jobs in sequence.
@@ -59,6 +63,7 @@ class JobOrchestrator:
         3. Ingest announcements (scrape ASX announcements)
         4. Generate price movement signals
         5. Generate volatility spike signals
+        6. Run data quality checks
 
         Returns:
             OrchestratorResult with all job results.
@@ -90,6 +95,10 @@ class JobOrchestrator:
             try:
                 result = job.run()
                 results.append(result)
+
+                # Persist job run to database
+                self._record_job_run(result)
+
                 if not result.success:
                     logger.warning(
                         "job_partial_failure",
@@ -98,15 +107,18 @@ class JobOrchestrator:
                     )
             except Exception as e:
                 logger.error("job_exception", job=job.name, error=str(e))
-                results.append(
-                    JobResult(
-                        job_name=job.name,
-                        success=False,
-                        started_at=datetime.now(),
-                        completed_at=datetime.now(),
-                        error_message=str(e),
-                    )
+                error_result = JobResult(
+                    job_name=job.name,
+                    success=False,
+                    started_at=datetime.now(),
+                    completed_at=datetime.now(),
+                    error_message=str(e),
                 )
+                results.append(error_result)
+                self._record_job_run(error_result)
+
+        # Run data quality checks after all jobs complete
+        self._run_quality_checks()
 
         completed_at = datetime.now()
         succeeded = sum(1 for r in results if r.success)
@@ -336,3 +348,87 @@ class JobOrchestrator:
             jobs_failed=0 if result.success else 1,
             results=[result],
         )
+
+    def run_reactions(self, lookback_days: int = 90) -> OrchestratorResult:
+        """Run only reaction metrics computation job.
+
+        Args:
+            lookback_days: Number of days to look back for announcements.
+
+        Returns:
+            OrchestratorResult with reactions job result.
+        """
+        from datetime import date, timedelta
+
+        started_at = datetime.now()
+
+        logger.info("orchestrator_started", mode="reactions")
+
+        lookback_date = date.today() - timedelta(days=lookback_days)
+        job = ComputeReactionsJob(db=self.db, lookback_date=lookback_date)
+
+        try:
+            result = job.run()
+        except Exception as e:
+            logger.error("job_exception", job=job.name, error=str(e))
+            result = JobResult(
+                job_name=job.name,
+                success=False,
+                started_at=datetime.now(),
+                completed_at=datetime.now(),
+                error_message=str(e),
+            )
+
+        completed_at = datetime.now()
+
+        logger.info(
+            "orchestrator_completed",
+            mode="reactions",
+            jobs_run=1,
+            jobs_succeeded=1 if result.success else 0,
+            jobs_failed=0 if result.success else 1,
+            duration_seconds=(completed_at - started_at).total_seconds(),
+        )
+
+        return OrchestratorResult(
+            started_at=started_at,
+            completed_at=completed_at,
+            jobs_run=1,
+            jobs_succeeded=1 if result.success else 0,
+            jobs_failed=0 if result.success else 1,
+            results=[result],
+        )
+
+    # =========================================================================
+    # Observability Helper Methods
+    # =========================================================================
+
+    def _record_job_run(self, result: JobResult) -> None:
+        """Record a job run to the database.
+
+        Fails silently to avoid disrupting job execution.
+
+        Args:
+            result: JobResult to persist.
+        """
+        try:
+            self.job_tracker.record_job_run(result)
+        except Exception as e:
+            logger.warning(
+                "job_run_tracking_failed",
+                job=result.job_name,
+                error=str(e),
+            )
+
+    def _run_quality_checks(self) -> None:
+        """Run data quality checks after job execution.
+
+        Fails silently to avoid disrupting orchestration.
+        """
+        try:
+            self.quality_monitor.run_all_checks()
+        except Exception as e:
+            logger.warning(
+                "quality_checks_failed",
+                error=str(e),
+            )

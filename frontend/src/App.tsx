@@ -6,6 +6,8 @@ import SymbolPage from "./pages/SymbolPage";
 import BacktestsPage from "./pages/BacktestsPage";
 import BacktestDetailPage from "./pages/BacktestDetailPage";
 import PortfolioPage from "./pages/PortfolioPage";
+import ReactionsPage from "./pages/ReactionsPage";
+import HealthPage from "./pages/HealthPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
 function App() {
@@ -37,6 +39,14 @@ function App() {
                 <Route
                     path="portfolio"
                     element={<PortfolioPage />}
+                />
+                <Route
+                    path="reactions"
+                    element={<ReactionsPage />}
+                />
+                <Route
+                    path="health"
+                    element={<HealthPage />}
                 />
                 <Route
                     path="*"

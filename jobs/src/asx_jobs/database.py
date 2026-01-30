@@ -1118,3 +1118,152 @@ class Database:
             .execute()
         )
         return [dict(r) for r in result.data]
+
+    # =========================================================================
+    # Announcement Reactions Methods
+    # =========================================================================
+
+    def get_reactions_by_type(
+        self,
+        document_type: str | None = None,
+        limit: int = 100,
+    ) -> list[dict[str, Any]]:
+        """Get announcement reactions, optionally filtered by document type.
+
+        Args:
+            document_type: Optional filter by document type.
+            limit: Maximum number of records.
+
+        Returns:
+            List of reaction records.
+        """
+        query = (
+            self._client.table("announcement_reactions")
+            .select("*, instruments(symbol, name)")
+        )
+
+        if document_type:
+            query = query.eq("document_type", document_type)
+
+        result = query.order("announcement_date", desc=True).limit(limit).execute()
+        return [dict(r) for r in result.data]
+
+    def get_reactions_summary_by_type(self) -> list[dict[str, Any]]:
+        """Get aggregated reaction summary by document type.
+
+        Returns:
+            List of aggregated statistics by document type.
+        """
+        result = (
+            self._client.table("announcement_reactions")
+            .select("document_type, reaction_direction, return_1d_pct")
+            .execute()
+        )
+
+        type_stats: dict[str, dict[str, Any]] = {}
+        for row in result.data:
+            doc_type = row.get("document_type") or "Unknown"
+            if doc_type not in type_stats:
+                type_stats[doc_type] = {
+                    "document_type": doc_type,
+                    "total_count": 0,
+                    "positive_count": 0,
+                    "negative_count": 0,
+                    "neutral_count": 0,
+                    "returns": [],
+                }
+
+            type_stats[doc_type]["total_count"] += 1
+            direction = row.get("reaction_direction")
+            if direction == "positive":
+                type_stats[doc_type]["positive_count"] += 1
+            elif direction == "negative":
+                type_stats[doc_type]["negative_count"] += 1
+            else:
+                type_stats[doc_type]["neutral_count"] += 1
+
+            if row.get("return_1d_pct") is not None:
+                type_stats[doc_type]["returns"].append(float(row["return_1d_pct"]))
+
+        summary = []
+        for doc_type, stats in type_stats.items():
+            returns = stats.pop("returns")
+            if returns:
+                stats["avg_return_pct"] = sum(returns) / len(returns)
+                stats["median_return_pct"] = sorted(returns)[len(returns) // 2]
+            else:
+                stats["avg_return_pct"] = 0.0
+                stats["median_return_pct"] = 0.0
+            summary.append(stats)
+
+        return sorted(summary, key=lambda x: x["total_count"], reverse=True)
+
+    def get_reactions_summary_by_sensitivity(self) -> list[dict[str, Any]]:
+        """Get aggregated reaction summary by price sensitivity.
+
+        Returns:
+            List of aggregated statistics by sensitivity level.
+        """
+        result = (
+            self._client.table("announcement_reactions")
+            .select("sensitivity, reaction_direction, return_1d_pct")
+            .execute()
+        )
+
+        sens_stats: dict[str, dict[str, Any]] = {}
+        for row in result.data:
+            sensitivity = row.get("sensitivity") or "unknown"
+            if sensitivity not in sens_stats:
+                sens_stats[sensitivity] = {
+                    "sensitivity": sensitivity,
+                    "total_count": 0,
+                    "positive_count": 0,
+                    "negative_count": 0,
+                    "neutral_count": 0,
+                    "returns": [],
+                }
+
+            sens_stats[sensitivity]["total_count"] += 1
+            direction = row.get("reaction_direction")
+            if direction == "positive":
+                sens_stats[sensitivity]["positive_count"] += 1
+            elif direction == "negative":
+                sens_stats[sensitivity]["negative_count"] += 1
+            else:
+                sens_stats[sensitivity]["neutral_count"] += 1
+
+            if row.get("return_1d_pct") is not None:
+                sens_stats[sensitivity]["returns"].append(float(row["return_1d_pct"]))
+
+        summary = []
+        for sensitivity, stats in sens_stats.items():
+            returns = stats.pop("returns")
+            if returns:
+                stats["avg_return_pct"] = sum(returns) / len(returns)
+            else:
+                stats["avg_return_pct"] = 0.0
+            summary.append(stats)
+
+        return sorted(summary, key=lambda x: x["total_count"], reverse=True)
+
+    def get_reactions_for_symbol(
+        self, instrument_id: int, limit: int = 50
+    ) -> list[dict[str, Any]]:
+        """Get announcement reactions for a specific instrument.
+
+        Args:
+            instrument_id: Instrument ID.
+            limit: Maximum number of records.
+
+        Returns:
+            List of reaction records.
+        """
+        result = (
+            self._client.table("announcement_reactions")
+            .select("*")
+            .eq("instrument_id", instrument_id)
+            .order("announcement_date", desc=True)
+            .limit(limit)
+            .execute()
+        )
+        return [dict(r) for r in result.data]

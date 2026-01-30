@@ -1,7 +1,7 @@
 ---
 id: 034
 name: CI Quality Gates (Frontend + Jobs Runner)
-status: Planned
+status: Completed
 ---
 
 # 034 - CI Quality Gates (Frontend + Jobs Runner)

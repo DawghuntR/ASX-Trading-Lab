@@ -27,6 +27,7 @@ Examples:
   asx-jobs symbols                Ingest symbols only (with metadata)
   asx-jobs signals                Generate signals only
   asx-jobs announcements          Ingest ASX announcements only
+  asx-jobs reactions              Compute 1D reaction metrics for announcements
   
 Paper Trading:
   asx-jobs paper account create "My Account" --balance 100000
@@ -67,6 +68,15 @@ Paper Trading:
 
     # Announcements command
     subparsers.add_parser("announcements", help="Ingest ASX announcements")
+
+    # Reactions command
+    reactions_parser = subparsers.add_parser("reactions", help="Compute announcement reaction metrics")
+    reactions_parser.add_argument(
+        "--lookback",
+        type=int,
+        default=90,
+        help="Number of days to look back for announcements (default: 90)",
+    )
 
     # Paper trading command
     paper_parser = subparsers.add_parser("paper", help="Paper trading operations")
@@ -182,6 +192,8 @@ Paper Trading:
             result = orchestrator.run_signals()
         elif args.command == "announcements":
             result = orchestrator.run_announcements()
+        elif args.command == "reactions":
+            result = orchestrator.run_reactions(lookback_days=args.lookback)
         else:
             logger.error("unknown_command", command=args.command)
             return 1

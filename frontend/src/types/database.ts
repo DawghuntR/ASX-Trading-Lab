@@ -23,6 +23,10 @@ export type AnnouncementSensitivity =
     | "not_price_sensitive"
     | "unknown";
 
+export type ReactionDirection = "positive" | "negative" | "neutral";
+
+export type ReactionStrength = "weak" | "medium" | "strong";
+
 export type OrderStatus =
     | "pending"
     | "filled"
@@ -33,6 +37,10 @@ export type OrderStatus =
 export type OrderSide = "buy" | "sell";
 
 export type OrderType = "market" | "limit" | "stop" | "stop_limit";
+
+export type JobRunStatus = "success" | "partial_failure" | "failure";
+
+export type DataQualitySeverity = "info" | "warning" | "error";
 
 export interface Database {
     public: {
@@ -261,6 +269,83 @@ export interface Database {
                     content_hash?: string | null;
                     metadata?: Json;
                     created_at?: string;
+                };
+            };
+            announcement_reactions: {
+                Row: {
+                    id: number;
+                    announcement_id: number;
+                    instrument_id: number;
+                    announcement_date: string;
+                    announcement_close: number | null;
+                    announcement_volume: number | null;
+                    next_day_date: string | null;
+                    next_day_open: number | null;
+                    next_day_close: number | null;
+                    next_day_high: number | null;
+                    next_day_low: number | null;
+                    next_day_volume: number | null;
+                    return_1d: number | null;
+                    return_1d_pct: number | null;
+                    gap_open_pct: number | null;
+                    intraday_range_pct: number | null;
+                    volume_change_pct: number | null;
+                    reaction_direction: ReactionDirection;
+                    reaction_strength: ReactionStrength;
+                    document_type: string | null;
+                    sensitivity: string | null;
+                    headline: string;
+                    computed_at: string;
+                };
+                Insert: {
+                    id?: number;
+                    announcement_id: number;
+                    instrument_id: number;
+                    announcement_date: string;
+                    announcement_close?: number | null;
+                    announcement_volume?: number | null;
+                    next_day_date?: string | null;
+                    next_day_open?: number | null;
+                    next_day_close?: number | null;
+                    next_day_high?: number | null;
+                    next_day_low?: number | null;
+                    next_day_volume?: number | null;
+                    return_1d?: number | null;
+                    return_1d_pct?: number | null;
+                    gap_open_pct?: number | null;
+                    intraday_range_pct?: number | null;
+                    volume_change_pct?: number | null;
+                    reaction_direction: ReactionDirection;
+                    reaction_strength: ReactionStrength;
+                    document_type?: string | null;
+                    sensitivity?: string | null;
+                    headline: string;
+                    computed_at?: string;
+                };
+                Update: {
+                    id?: number;
+                    announcement_id?: number;
+                    instrument_id?: number;
+                    announcement_date?: string;
+                    announcement_close?: number | null;
+                    announcement_volume?: number | null;
+                    next_day_date?: string | null;
+                    next_day_open?: number | null;
+                    next_day_close?: number | null;
+                    next_day_high?: number | null;
+                    next_day_low?: number | null;
+                    next_day_volume?: number | null;
+                    return_1d?: number | null;
+                    return_1d_pct?: number | null;
+                    gap_open_pct?: number | null;
+                    intraday_range_pct?: number | null;
+                    volume_change_pct?: number | null;
+                    reaction_direction?: ReactionDirection;
+                    reaction_strength?: ReactionStrength;
+                    document_type?: string | null;
+                    sensitivity?: string | null;
+                    headline?: string;
+                    computed_at?: string;
                 };
             };
             strategies: {
@@ -618,6 +703,88 @@ export interface Database {
                     created_at?: string;
                 };
             };
+            job_runs: {
+                Row: {
+                    id: number;
+                    job_name: string;
+                    run_date: string;
+                    started_at: string;
+                    completed_at: string;
+                    status: JobRunStatus;
+                    records_processed: number;
+                    records_failed: number;
+                    duration_seconds: number | null;
+                    error_message: string | null;
+                    metadata: Json;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: number;
+                    job_name: string;
+                    run_date: string;
+                    started_at: string;
+                    completed_at: string;
+                    status: JobRunStatus;
+                    records_processed?: number;
+                    records_failed?: number;
+                    duration_seconds?: number | null;
+                    error_message?: string | null;
+                    metadata?: Json;
+                    created_at?: string;
+                };
+                Update: {
+                    id?: number;
+                    job_name?: string;
+                    run_date?: string;
+                    started_at?: string;
+                    completed_at?: string;
+                    status?: JobRunStatus;
+                    records_processed?: number;
+                    records_failed?: number;
+                    duration_seconds?: number | null;
+                    error_message?: string | null;
+                    metadata?: Json;
+                    created_at?: string;
+                };
+            };
+            data_quality_checks: {
+                Row: {
+                    id: number;
+                    check_date: string;
+                    check_type: string;
+                    severity: DataQualitySeverity;
+                    affected_count: number;
+                    affected_symbols: string[];
+                    description: string | null;
+                    details: Json;
+                    resolved_at: string | null;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: number;
+                    check_date: string;
+                    check_type: string;
+                    severity: DataQualitySeverity;
+                    affected_count?: number;
+                    affected_symbols?: string[];
+                    description?: string | null;
+                    details?: Json;
+                    resolved_at?: string | null;
+                    created_at?: string;
+                };
+                Update: {
+                    id?: number;
+                    check_date?: string;
+                    check_type?: string;
+                    severity?: DataQualitySeverity;
+                    affected_count?: number;
+                    affected_symbols?: string[];
+                    description?: string | null;
+                    details?: Json;
+                    resolved_at?: string | null;
+                    created_at?: string;
+                };
+            };
         };
         Views: {
             v_latest_prices: {
@@ -701,6 +868,69 @@ export interface Database {
                     open_positions: number;
                 };
             };
+            v_job_run_summary: {
+                Row: {
+                    job_name: string;
+                    run_date: string;
+                    status: JobRunStatus;
+                    records_processed: number;
+                    records_failed: number;
+                    duration_seconds: number | null;
+                    error_message: string | null;
+                    started_at: string;
+                    completed_at: string;
+                    run_rank: number;
+                };
+            };
+            v_latest_job_runs: {
+                Row: {
+                    job_name: string;
+                    run_date: string;
+                    status: JobRunStatus;
+                    records_processed: number;
+                    records_failed: number;
+                    duration_seconds: number | null;
+                    error_message: string | null;
+                    started_at: string;
+                    completed_at: string;
+                };
+            };
+            v_stale_data_check: {
+                Row: {
+                    id: number;
+                    symbol: string;
+                    name: string | null;
+                    last_price_date: string | null;
+                    days_since_update: number | null;
+                    staleness_status: string;
+                };
+            };
+            v_price_quality_issues: {
+                Row: {
+                    symbol: string;
+                    name: string | null;
+                    trade_date: string;
+                    open: number | null;
+                    high: number | null;
+                    low: number | null;
+                    close: number | null;
+                    volume: number | null;
+                    issue_type: string;
+                };
+            };
+            v_unresolved_quality_issues: {
+                Row: {
+                    id: number;
+                    check_date: string;
+                    check_type: string;
+                    severity: DataQualitySeverity;
+                    affected_count: number;
+                    affected_symbols: string[];
+                    description: string | null;
+                    details: Json;
+                    created_at: string;
+                };
+            };
         };
         Functions: {
             upsert_instrument: {
@@ -751,10 +981,29 @@ export interface Database {
                     total_instruments: number;
                     active_instruments: number;
                     asx300_instruments: number;
-                    latest_price_date: string;
+                    latest_price_date: string | null;
                     prices_today: number;
                     signals_today: number;
+                    last_successful_run: string | null;
+                    days_since_update: number;
+                    unresolved_issues: number;
+                }[];
+            };
+            get_job_run_stats: {
+                Args: {
+                    p_days?: number;
                 };
+                Returns: {
+                    job_name: string;
+                    total_runs: number;
+                    successful_runs: number;
+                    failed_runs: number;
+                    success_rate: number;
+                    avg_duration_seconds: number;
+                    avg_records_processed: number;
+                    last_run_at: string;
+                    last_run_status: JobRunStatus;
+                }[];
             };
             calc_sma: {
                 Args: {

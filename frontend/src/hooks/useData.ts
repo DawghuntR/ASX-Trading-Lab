@@ -21,6 +21,10 @@ import {
     getPaperOrders,
     getPortfolioSnapshots,
     computeRiskMetrics,
+    getReactionsByType,
+    getReactionSummaryByType,
+    getReactionSummaryBySensitivity,
+    getReactionsForSymbol,
     type IngestStatus,
     type SignalWithInstrument,
     type BacktestRunWithStrategy,
@@ -29,6 +33,9 @@ import {
     type PaperPositionWithInstrument,
     type PaperOrderWithInstrument,
     type RiskMetrics,
+    type AnnouncementReactionWithInstrument,
+    type ReactionSummaryByType,
+    type ReactionSummaryBySensitivity,
 } from "../api/data";
 import type { Database } from "../types/database";
 
@@ -39,6 +46,7 @@ type Announcement = Database["public"]["Tables"]["announcements"]["Row"];
 type Strategy = Database["public"]["Tables"]["strategies"]["Row"];
 type PaperAccount = Database["public"]["Tables"]["paper_accounts"]["Row"];
 type PortfolioSnapshot = Database["public"]["Tables"]["portfolio_snapshots"]["Row"];
+type AnnouncementReaction = Database["public"]["Tables"]["announcement_reactions"]["Row"];
 
 interface UseQueryResult<T> {
     data: T | null;
@@ -533,4 +541,135 @@ export function useRiskMetrics(
     snapshots: PortfolioSnapshot[] | null
 ): RiskMetrics {
     return computeRiskMetrics(summary, snapshots || []);
+}
+
+// =========================================================================
+// Announcement Reactions Hooks (Feature 022)
+// =========================================================================
+
+/**
+ * Hook for fetching announcement reactions, optionally filtered by document type.
+ * @param documentType Optional filter by document type
+ * @param limit Maximum number of records (default: 100)
+ */
+export function useReactionsByType(
+    documentType?: string,
+    limit: number = 100
+): UseQueryResult<AnnouncementReactionWithInstrument[]> {
+    const [data, setData] = useState<AnnouncementReactionWithInstrument[] | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<Error | null>(null);
+
+    const fetch = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const result = await getReactionsByType(documentType, limit);
+            setData(result);
+        } catch (e) {
+            setError(e instanceof Error ? e : new Error("Unknown error"));
+        } finally {
+            setLoading(false);
+        }
+    }, [documentType, limit]);
+
+    useEffect(() => {
+        fetch();
+    }, [fetch]);
+
+    return { data, loading, error, refetch: fetch };
+}
+
+/**
+ * Hook for fetching aggregated reaction summary by document type.
+ */
+export function useReactionSummaryByType(): UseQueryResult<ReactionSummaryByType[]> {
+    const [data, setData] = useState<ReactionSummaryByType[] | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<Error | null>(null);
+
+    const fetch = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const result = await getReactionSummaryByType();
+            setData(result);
+        } catch (e) {
+            setError(e instanceof Error ? e : new Error("Unknown error"));
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetch();
+    }, [fetch]);
+
+    return { data, loading, error, refetch: fetch };
+}
+
+/**
+ * Hook for fetching aggregated reaction summary by sensitivity level.
+ */
+export function useReactionSummaryBySensitivity(): UseQueryResult<ReactionSummaryBySensitivity[]> {
+    const [data, setData] = useState<ReactionSummaryBySensitivity[] | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<Error | null>(null);
+
+    const fetch = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const result = await getReactionSummaryBySensitivity();
+            setData(result);
+        } catch (e) {
+            setError(e instanceof Error ? e : new Error("Unknown error"));
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetch();
+    }, [fetch]);
+
+    return { data, loading, error, refetch: fetch };
+}
+
+/**
+ * Hook for fetching reactions for a specific symbol.
+ * @param symbol Stock symbol
+ * @param limit Maximum number of records (default: 50)
+ */
+export function useSymbolReactions(
+    symbol: string,
+    limit: number = 50
+): UseQueryResult<AnnouncementReaction[]> {
+    const [data, setData] = useState<AnnouncementReaction[] | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<Error | null>(null);
+
+    const fetch = useCallback(async () => {
+        if (!symbol) {
+            setData(null);
+            setLoading(false);
+            return;
+        }
+        setLoading(true);
+        setError(null);
+        try {
+            const result = await getReactionsForSymbol(symbol, limit);
+            setData(result);
+        } catch (e) {
+            setError(e instanceof Error ? e : new Error("Unknown error"));
+        } finally {
+            setLoading(false);
+        }
+    }, [symbol, limit]);
+
+    useEffect(() => {
+        fetch();
+    }, [fetch]);
+
+    return { data, loading, error, refetch: fetch };
 }

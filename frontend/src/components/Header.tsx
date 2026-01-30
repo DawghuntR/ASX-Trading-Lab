@@ -41,6 +41,20 @@ function Header() {
                         }>
                         Portfolio
                     </NavLink>
+                    <NavLink
+                        to="/reactions"
+                        className={({ isActive }) =>
+                            isActive ? styles.navLinkActive : styles.navLink
+                        }>
+                        Reactions
+                    </NavLink>
+                    <NavLink
+                        to="/health"
+                        className={({ isActive }) =>
+                            isActive ? styles.navLinkActive : styles.navLink
+                        }>
+                        Health
+                    </NavLink>
                 </nav>
             </div>
         </header>

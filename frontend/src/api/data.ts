@@ -10,6 +10,7 @@ type Instrument = Database["public"]["Tables"]["instruments"]["Row"];
 type DailyPrice = Database["public"]["Tables"]["daily_prices"]["Row"];
 type Signal = Database["public"]["Tables"]["signals"]["Row"];
 type Announcement = Database["public"]["Tables"]["announcements"]["Row"];
+type AnnouncementReaction = Database["public"]["Tables"]["announcement_reactions"]["Row"];
 
 export interface IngestStatus {
     total_instruments: number;
@@ -18,6 +19,9 @@ export interface IngestStatus {
     latest_price_date: string | null;
     prices_today: number;
     signals_today: number;
+    last_successful_run: string | null;
+    days_since_update: number;
+    unresolved_issues: number;
 }
 
 export interface SignalWithInstrument extends Signal {
@@ -30,6 +34,29 @@ export interface PriceWithInstrument extends DailyPrice {
 
 export interface AnnouncementWithInstrument extends Announcement {
     instruments: Pick<Instrument, "symbol" | "name"> | null;
+}
+
+export interface AnnouncementReactionWithInstrument extends AnnouncementReaction {
+    instruments: Pick<Instrument, "symbol" | "name"> | null;
+}
+
+export interface ReactionSummaryByType {
+    document_type: string;
+    total_count: number;
+    positive_count: number;
+    negative_count: number;
+    neutral_count: number;
+    avg_return_pct: number;
+    median_return_pct?: number;
+}
+
+export interface ReactionSummaryBySensitivity {
+    sensitivity: string;
+    total_count: number;
+    positive_count: number;
+    negative_count: number;
+    neutral_count: number;
+    avg_return_pct: number;
 }
 
 export async function getIngestStatus(): Promise<IngestStatus | null> {
@@ -583,4 +610,211 @@ export function computeRiskMetrics(
         is_compliant: violations.length === 0,
         violations,
     };
+}
+
+// =========================================================================
+// Announcement Reactions API (Feature 022)
+// =========================================================================
+
+export async function getReactionsByType(
+    documentType?: string,
+    limit: number = 100
+): Promise<AnnouncementReactionWithInstrument[]> {
+    if (!isSupabaseConfigured || !supabase) return [];
+
+    let query = supabase
+        .from("announcement_reactions")
+        .select("*, instruments(symbol, name)")
+        .order("announcement_date", { ascending: false })
+        .limit(limit);
+
+    if (documentType) {
+        query = query.eq("document_type", documentType);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+        console.error("Error fetching reactions:", error);
+        return [];
+    }
+
+    return (data as AnnouncementReactionWithInstrument[]) || [];
+}
+
+export async function getReactionSummaryByType(): Promise<ReactionSummaryByType[]> {
+    if (!isSupabaseConfigured || !supabase) return [];
+
+    const { data, error } = await supabase
+        .from("announcement_reactions")
+        .select("document_type, reaction_direction, return_1d_pct");
+
+    if (error) {
+        console.error("Error fetching reaction summary:", error);
+        return [];
+    }
+
+    type ReactionRow = {
+        document_type: string | null;
+        reaction_direction: string | null;
+        return_1d_pct: number | null;
+    };
+
+    const typeStats: Record<string, {
+        document_type: string;
+        total_count: number;
+        positive_count: number;
+        negative_count: number;
+        neutral_count: number;
+        returns: number[];
+    }> = {};
+
+    for (const row of (data as ReactionRow[]) || []) {
+        const docType = row.document_type || "Unknown";
+        if (!typeStats[docType]) {
+            typeStats[docType] = {
+                document_type: docType,
+                total_count: 0,
+                positive_count: 0,
+                negative_count: 0,
+                neutral_count: 0,
+                returns: [],
+            };
+        }
+
+        typeStats[docType].total_count++;
+        if (row.reaction_direction === "positive") {
+            typeStats[docType].positive_count++;
+        } else if (row.reaction_direction === "negative") {
+            typeStats[docType].negative_count++;
+        } else {
+            typeStats[docType].neutral_count++;
+        }
+
+        if (row.return_1d_pct != null) {
+            typeStats[docType].returns.push(row.return_1d_pct);
+        }
+    }
+
+    const summary: ReactionSummaryByType[] = [];
+    for (const stats of Object.values(typeStats)) {
+        const returns = stats.returns;
+        const avgReturn = returns.length > 0
+            ? returns.reduce((a, b) => a + b, 0) / returns.length
+            : 0;
+        const sortedReturns = [...returns].sort((a, b) => a - b);
+        const medianReturn = returns.length > 0
+            ? sortedReturns[Math.floor(returns.length / 2)]
+            : 0;
+
+        summary.push({
+            document_type: stats.document_type,
+            total_count: stats.total_count,
+            positive_count: stats.positive_count,
+            negative_count: stats.negative_count,
+            neutral_count: stats.neutral_count,
+            avg_return_pct: avgReturn,
+            median_return_pct: medianReturn,
+        });
+    }
+
+    return summary.sort((a, b) => b.total_count - a.total_count);
+}
+
+export async function getReactionSummaryBySensitivity(): Promise<ReactionSummaryBySensitivity[]> {
+    if (!isSupabaseConfigured || !supabase) return [];
+
+    const { data, error } = await supabase
+        .from("announcement_reactions")
+        .select("sensitivity, reaction_direction, return_1d_pct");
+
+    if (error) {
+        console.error("Error fetching reaction summary:", error);
+        return [];
+    }
+
+    type SensitivityRow = {
+        sensitivity: string | null;
+        reaction_direction: string | null;
+        return_1d_pct: number | null;
+    };
+
+    const sensStats: Record<string, {
+        sensitivity: string;
+        total_count: number;
+        positive_count: number;
+        negative_count: number;
+        neutral_count: number;
+        returns: number[];
+    }> = {};
+
+    for (const row of (data as SensitivityRow[]) || []) {
+        const sensitivity = row.sensitivity || "unknown";
+        if (!sensStats[sensitivity]) {
+            sensStats[sensitivity] = {
+                sensitivity: sensitivity,
+                total_count: 0,
+                positive_count: 0,
+                negative_count: 0,
+                neutral_count: 0,
+                returns: [],
+            };
+        }
+
+        sensStats[sensitivity].total_count++;
+        if (row.reaction_direction === "positive") {
+            sensStats[sensitivity].positive_count++;
+        } else if (row.reaction_direction === "negative") {
+            sensStats[sensitivity].negative_count++;
+        } else {
+            sensStats[sensitivity].neutral_count++;
+        }
+
+        if (row.return_1d_pct != null) {
+            sensStats[sensitivity].returns.push(row.return_1d_pct);
+        }
+    }
+
+    const summary: ReactionSummaryBySensitivity[] = [];
+    for (const stats of Object.values(sensStats)) {
+        const returns = stats.returns;
+        const avgReturn = returns.length > 0
+            ? returns.reduce((a, b) => a + b, 0) / returns.length
+            : 0;
+
+        summary.push({
+            sensitivity: stats.sensitivity,
+            total_count: stats.total_count,
+            positive_count: stats.positive_count,
+            negative_count: stats.negative_count,
+            neutral_count: stats.neutral_count,
+            avg_return_pct: avgReturn,
+        });
+    }
+
+    return summary.sort((a, b) => b.total_count - a.total_count);
+}
+
+export async function getReactionsForSymbol(
+    symbol: string,
+    limit: number = 50
+): Promise<AnnouncementReaction[]> {
+    if (!isSupabaseConfigured || !supabase) return [];
+
+    const instrument = await getInstrumentBySymbol(symbol);
+    if (!instrument) return [];
+
+    const { data, error } = await supabase
+        .from("announcement_reactions")
+        .select("*")
+        .eq("instrument_id", instrument.id)
+        .order("announcement_date", { ascending: false })
+        .limit(limit);
+
+    if (error) {
+        console.error("Error fetching reactions:", error);
+        return [];
+    }
+
+    return data || [];
 }

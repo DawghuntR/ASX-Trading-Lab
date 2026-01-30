@@ -1,7 +1,7 @@
 ---
 id: 022
 name: News Reaction Analytics (1D)
-status: Planned
+status: Completed
 ---
 
 # 022 - News Reaction Analytics (1D)
