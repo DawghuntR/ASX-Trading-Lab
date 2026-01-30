@@ -1,7 +1,7 @@
 ---
 id: 029
 name: UI - Portfolio & Risk Dashboard
-status: Planned
+status: Completed
 ---
 
 # 029 - UI: Portfolio & Risk Dashboard

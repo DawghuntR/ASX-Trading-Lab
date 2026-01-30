@@ -373,3 +373,214 @@ export async function getStrategies(): Promise<Strategy[]> {
 
     return data || [];
 }
+
+// Paper Trading / Portfolio Types
+type PaperAccount = Database["public"]["Tables"]["paper_accounts"]["Row"];
+type PaperPosition = Database["public"]["Tables"]["paper_positions"]["Row"];
+type PaperOrder = Database["public"]["Tables"]["paper_orders"]["Row"];
+type PortfolioSnapshot = Database["public"]["Tables"]["portfolio_snapshots"]["Row"];
+
+export interface PaperPositionWithInstrument extends PaperPosition {
+    instruments: Pick<Instrument, "symbol" | "name" | "sector"> | null;
+}
+
+export interface PaperOrderWithInstrument extends PaperOrder {
+    instruments: Pick<Instrument, "symbol" | "name"> | null;
+}
+
+export interface PortfolioSummary {
+    account_id: number;
+    account_name: string;
+    initial_balance: number;
+    cash_balance: number;
+    positions_value: number;
+    total_value: number;
+    total_return_percent: number | null;
+    open_positions: number;
+}
+
+export interface RiskMetrics {
+    total_exposure: number;
+    cash_reserve_pct: number;
+    current_drawdown_pct: number;
+    peak_value: number;
+    max_position_concentration: number;
+    losing_streak: number;
+    is_compliant: boolean;
+    violations: string[];
+}
+
+export async function getPaperAccounts(): Promise<PaperAccount[]> {
+    if (!isSupabaseConfigured || !supabase) return [];
+
+    const { data, error } = await supabase
+        .from("paper_accounts")
+        .select("*")
+        .eq("is_active", true)
+        .order("name");
+
+    if (error) {
+        console.error("Error fetching paper accounts:", error);
+        return [];
+    }
+
+    return data || [];
+}
+
+export async function getPortfolioSummary(
+    accountId: number
+): Promise<PortfolioSummary | null> {
+    if (!isSupabaseConfigured || !supabase) return null;
+
+    const { data, error } = await supabase
+        .from("v_portfolio_summary")
+        .select("*")
+        .eq("account_id", accountId)
+        .single();
+
+    if (error) {
+        console.error("Error fetching portfolio summary:", error);
+        return null;
+    }
+
+    return data as PortfolioSummary;
+}
+
+export async function getPaperPositions(
+    accountId: number
+): Promise<PaperPositionWithInstrument[]> {
+    if (!isSupabaseConfigured || !supabase) return [];
+
+    const { data, error } = await supabase
+        .from("paper_positions")
+        .select("*, instruments(symbol, name, sector)")
+        .eq("account_id", accountId)
+        .gt("quantity", 0)
+        .order("unrealized_pnl", { ascending: false, nullsFirst: false });
+
+    if (error) {
+        console.error("Error fetching paper positions:", error);
+        return [];
+    }
+
+    return (data as PaperPositionWithInstrument[]) || [];
+}
+
+export async function getPaperOrders(
+    accountId: number,
+    status?: string,
+    limit: number = 50
+): Promise<PaperOrderWithInstrument[]> {
+    if (!isSupabaseConfigured || !supabase) return [];
+
+    let query = supabase
+        .from("paper_orders")
+        .select("*, instruments(symbol, name)")
+        .eq("account_id", accountId)
+        .order("submitted_at", { ascending: false })
+        .limit(limit);
+
+    if (status) {
+        query = query.eq("status", status);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+        console.error("Error fetching paper orders:", error);
+        return [];
+    }
+
+    return (data as PaperOrderWithInstrument[]) || [];
+}
+
+export async function getPortfolioSnapshots(
+    accountId: number,
+    limit: number = 90
+): Promise<PortfolioSnapshot[]> {
+    if (!isSupabaseConfigured || !supabase) return [];
+
+    const { data, error } = await supabase
+        .from("portfolio_snapshots")
+        .select("*")
+        .eq("account_id", accountId)
+        .order("snapshot_date", { ascending: false })
+        .limit(limit);
+
+    if (error) {
+        console.error("Error fetching portfolio snapshots:", error);
+        return [];
+    }
+
+    return data || [];
+}
+
+export function computeRiskMetrics(
+    summary: PortfolioSummary | null,
+    snapshots: PortfolioSnapshot[]
+): RiskMetrics {
+    const defaults: RiskMetrics = {
+        total_exposure: 0,
+        cash_reserve_pct: 1,
+        current_drawdown_pct: 0,
+        peak_value: 0,
+        max_position_concentration: 0,
+        losing_streak: 0,
+        is_compliant: true,
+        violations: [],
+    };
+
+    if (!summary) return defaults;
+
+    const totalValue = summary.total_value || 0;
+    const positionsValue = summary.positions_value || 0;
+    const cashBalance = summary.cash_balance || 0;
+
+    const totalExposure = totalValue > 0 ? positionsValue / totalValue : 0;
+    const cashReservePct = totalValue > 0 ? cashBalance / totalValue : 1;
+
+    let peakValue = summary.initial_balance;
+    for (const snap of snapshots) {
+        if (snap.total_value > peakValue) {
+            peakValue = snap.total_value;
+        }
+    }
+    if (totalValue > peakValue) {
+        peakValue = totalValue;
+    }
+
+    const currentDrawdownPct =
+        peakValue > 0 ? (peakValue - totalValue) / peakValue : 0;
+
+    const violations: string[] = [];
+    const MAX_EXPOSURE = 0.95;
+    const MIN_CASH_RESERVE = 0.05;
+    const MAX_DRAWDOWN = 0.2;
+
+    if (totalExposure > MAX_EXPOSURE) {
+        violations.push(
+            `Exposure ${(totalExposure * 100).toFixed(1)}% exceeds ${MAX_EXPOSURE * 100}%`
+        );
+    }
+    if (cashReservePct < MIN_CASH_RESERVE) {
+        violations.push(
+            `Cash reserve ${(cashReservePct * 100).toFixed(1)}% below ${MIN_CASH_RESERVE * 100}%`
+        );
+    }
+    if (currentDrawdownPct > MAX_DRAWDOWN) {
+        violations.push(
+            `Drawdown ${(currentDrawdownPct * 100).toFixed(1)}% exceeds ${MAX_DRAWDOWN * 100}%`
+        );
+    }
+
+    return {
+        total_exposure: totalExposure,
+        cash_reserve_pct: cashReservePct,
+        current_drawdown_pct: currentDrawdownPct,
+        peak_value: peakValue,
+        max_position_concentration: 0,
+        losing_streak: 0,
+        is_compliant: violations.length === 0,
+        violations,
+    };
+}

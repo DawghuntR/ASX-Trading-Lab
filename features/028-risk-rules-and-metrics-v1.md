@@ -1,7 +1,7 @@
 ---
 id: 028
 name: Risk Rules & Metrics v1
-status: Planned
+status: Completed
 ---
 
 # 028 - Risk Rules & Metrics v1

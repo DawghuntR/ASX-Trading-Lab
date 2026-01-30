@@ -15,10 +15,20 @@ import {
     getBacktestRuns,
     getBacktestRunById,
     getStrategies,
+    getPaperAccounts,
+    getPortfolioSummary,
+    getPaperPositions,
+    getPaperOrders,
+    getPortfolioSnapshots,
+    computeRiskMetrics,
     type IngestStatus,
     type SignalWithInstrument,
     type BacktestRunWithStrategy,
     type BacktestDetail,
+    type PortfolioSummary,
+    type PaperPositionWithInstrument,
+    type PaperOrderWithInstrument,
+    type RiskMetrics,
 } from "../api/data";
 import type { Database } from "../types/database";
 
@@ -27,6 +37,8 @@ type DailyPrice = Database["public"]["Tables"]["daily_prices"]["Row"];
 type Signal = Database["public"]["Tables"]["signals"]["Row"];
 type Announcement = Database["public"]["Tables"]["announcements"]["Row"];
 type Strategy = Database["public"]["Tables"]["strategies"]["Row"];
+type PaperAccount = Database["public"]["Tables"]["paper_accounts"]["Row"];
+type PortfolioSnapshot = Database["public"]["Tables"]["portfolio_snapshots"]["Row"];
 
 interface UseQueryResult<T> {
     data: T | null;
@@ -358,4 +370,167 @@ export function useStrategies(): UseQueryResult<Strategy[]> {
     }, [fetch]);
 
     return { data, loading, error, refetch: fetch };
+}
+
+export function usePaperAccounts(): UseQueryResult<PaperAccount[]> {
+    const [data, setData] = useState<PaperAccount[] | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<Error | null>(null);
+
+    const fetch = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const result = await getPaperAccounts();
+            setData(result);
+        } catch (e) {
+            setError(e instanceof Error ? e : new Error("Unknown error"));
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetch();
+    }, [fetch]);
+
+    return { data, loading, error, refetch: fetch };
+}
+
+export function usePortfolioSummary(
+    accountId: number | null
+): UseQueryResult<PortfolioSummary> {
+    const [data, setData] = useState<PortfolioSummary | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<Error | null>(null);
+
+    const fetch = useCallback(async () => {
+        if (accountId === null) {
+            setData(null);
+            setLoading(false);
+            return;
+        }
+        setLoading(true);
+        setError(null);
+        try {
+            const result = await getPortfolioSummary(accountId);
+            setData(result);
+        } catch (e) {
+            setError(e instanceof Error ? e : new Error("Unknown error"));
+        } finally {
+            setLoading(false);
+        }
+    }, [accountId]);
+
+    useEffect(() => {
+        fetch();
+    }, [fetch]);
+
+    return { data, loading, error, refetch: fetch };
+}
+
+export function usePaperPositions(
+    accountId: number | null
+): UseQueryResult<PaperPositionWithInstrument[]> {
+    const [data, setData] = useState<PaperPositionWithInstrument[] | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<Error | null>(null);
+
+    const fetch = useCallback(async () => {
+        if (accountId === null) {
+            setData(null);
+            setLoading(false);
+            return;
+        }
+        setLoading(true);
+        setError(null);
+        try {
+            const result = await getPaperPositions(accountId);
+            setData(result);
+        } catch (e) {
+            setError(e instanceof Error ? e : new Error("Unknown error"));
+        } finally {
+            setLoading(false);
+        }
+    }, [accountId]);
+
+    useEffect(() => {
+        fetch();
+    }, [fetch]);
+
+    return { data, loading, error, refetch: fetch };
+}
+
+export function usePaperOrders(
+    accountId: number | null,
+    status?: string,
+    limit: number = 50
+): UseQueryResult<PaperOrderWithInstrument[]> {
+    const [data, setData] = useState<PaperOrderWithInstrument[] | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<Error | null>(null);
+
+    const fetch = useCallback(async () => {
+        if (accountId === null) {
+            setData(null);
+            setLoading(false);
+            return;
+        }
+        setLoading(true);
+        setError(null);
+        try {
+            const result = await getPaperOrders(accountId, status, limit);
+            setData(result);
+        } catch (e) {
+            setError(e instanceof Error ? e : new Error("Unknown error"));
+        } finally {
+            setLoading(false);
+        }
+    }, [accountId, status, limit]);
+
+    useEffect(() => {
+        fetch();
+    }, [fetch]);
+
+    return { data, loading, error, refetch: fetch };
+}
+
+export function usePortfolioSnapshots(
+    accountId: number | null,
+    limit: number = 90
+): UseQueryResult<PortfolioSnapshot[]> {
+    const [data, setData] = useState<PortfolioSnapshot[] | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<Error | null>(null);
+
+    const fetch = useCallback(async () => {
+        if (accountId === null) {
+            setData(null);
+            setLoading(false);
+            return;
+        }
+        setLoading(true);
+        setError(null);
+        try {
+            const result = await getPortfolioSnapshots(accountId, limit);
+            setData(result);
+        } catch (e) {
+            setError(e instanceof Error ? e : new Error("Unknown error"));
+        } finally {
+            setLoading(false);
+        }
+    }, [accountId, limit]);
+
+    useEffect(() => {
+        fetch();
+    }, [fetch]);
+
+    return { data, loading, error, refetch: fetch };
+}
+
+export function useRiskMetrics(
+    summary: PortfolioSummary | null,
+    snapshots: PortfolioSnapshot[] | null
+): RiskMetrics {
+    return computeRiskMetrics(summary, snapshots || []);
 }

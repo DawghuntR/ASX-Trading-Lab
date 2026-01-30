@@ -657,3 +657,464 @@ class Database:
             prices_by_instrument[inst_id].append(dict(row))
 
         return prices_by_instrument
+
+    # =========================================================================
+    # Paper Trading Methods
+    # =========================================================================
+
+    def create_paper_account(
+        self,
+        name: str,
+        initial_balance: float = 100000.0,
+    ) -> int:
+        """Create a new paper trading account.
+
+        Args:
+            name: Account name.
+            initial_balance: Starting cash balance.
+
+        Returns:
+            Account ID.
+        """
+        data = {
+            "name": name,
+            "initial_balance": initial_balance,
+            "cash_balance": initial_balance,
+            "is_active": True,
+        }
+
+        result = self._client.table("paper_accounts").insert(data).execute()
+        return int(result.data[0]["id"])
+
+    def get_paper_account(self, account_id: int) -> dict[str, Any] | None:
+        """Get a paper trading account by ID.
+
+        Args:
+            account_id: Account ID.
+
+        Returns:
+            Account record or None.
+        """
+        result = (
+            self._client.table("paper_accounts")
+            .select("*")
+            .eq("id", account_id)
+            .limit(1)
+            .execute()
+        )
+
+        if result.data:
+            return dict(result.data[0])
+        return None
+
+    def get_paper_account_by_name(self, name: str) -> dict[str, Any] | None:
+        """Get a paper trading account by name.
+
+        Args:
+            name: Account name.
+
+        Returns:
+            Account record or None.
+        """
+        result = (
+            self._client.table("paper_accounts")
+            .select("*")
+            .eq("name", name)
+            .limit(1)
+            .execute()
+        )
+
+        if result.data:
+            return dict(result.data[0])
+        return None
+
+    def get_all_paper_accounts(self, active_only: bool = True) -> list[dict[str, Any]]:
+        """Get all paper trading accounts.
+
+        Args:
+            active_only: Only return active accounts.
+
+        Returns:
+            List of account records.
+        """
+        query = self._client.table("paper_accounts").select("*")
+
+        if active_only:
+            query = query.eq("is_active", True)
+
+        result = query.order("name").execute()
+        return [dict(r) for r in result.data]
+
+    def update_paper_account_balance(
+        self, account_id: int, cash_balance: float
+    ) -> None:
+        """Update paper account cash balance.
+
+        Args:
+            account_id: Account ID.
+            cash_balance: New cash balance.
+        """
+        self._client.table("paper_accounts").update(
+            {"cash_balance": cash_balance, "updated_at": datetime.now().isoformat()}
+        ).eq("id", account_id).execute()
+
+    def submit_paper_order(
+        self,
+        account_id: int,
+        instrument_id: int,
+        order_side: str,
+        quantity: int,
+        order_type: str = "market",
+        limit_price: float | None = None,
+        stop_price: float | None = None,
+        notes: str | None = None,
+    ) -> int:
+        """Submit a paper trading order.
+
+        Args:
+            account_id: Account ID.
+            instrument_id: Instrument ID.
+            order_side: 'buy' or 'sell'.
+            quantity: Number of shares.
+            order_type: 'market', 'limit', 'stop', 'stop_limit'.
+            limit_price: Limit price (for limit orders).
+            stop_price: Stop price (for stop orders).
+            notes: Optional notes.
+
+        Returns:
+            Order ID.
+        """
+        data = {
+            "account_id": account_id,
+            "instrument_id": instrument_id,
+            "order_side": order_side,
+            "order_type": order_type,
+            "quantity": quantity,
+            "limit_price": limit_price,
+            "stop_price": stop_price,
+            "status": "pending",
+            "filled_quantity": 0,
+            "notes": notes,
+            "submitted_at": datetime.now().isoformat(),
+        }
+
+        result = self._client.table("paper_orders").insert(data).execute()
+        return int(result.data[0]["id"])
+
+    def get_pending_paper_orders(
+        self, account_id: int | None = None
+    ) -> list[dict[str, Any]]:
+        """Get all pending paper orders.
+
+        Args:
+            account_id: Optional account filter.
+
+        Returns:
+            List of pending order records.
+        """
+        query = (
+            self._client.table("paper_orders")
+            .select("*, instruments(symbol, name)")
+            .eq("status", "pending")
+        )
+
+        if account_id:
+            query = query.eq("account_id", account_id)
+
+        result = query.order("submitted_at").execute()
+        return [dict(r) for r in result.data]
+
+    def fill_paper_order(
+        self,
+        order_id: int,
+        filled_price: float,
+        filled_quantity: int | None = None,
+    ) -> None:
+        """Fill a paper order.
+
+        Args:
+            order_id: Order ID.
+            filled_price: Fill price.
+            filled_quantity: Quantity filled (defaults to full order).
+        """
+        order = (
+            self._client.table("paper_orders")
+            .select("*")
+            .eq("id", order_id)
+            .single()
+            .execute()
+        )
+
+        qty = filled_quantity or order.data["quantity"]
+        status = "filled" if qty >= order.data["quantity"] else "partial"
+
+        self._client.table("paper_orders").update(
+            {
+                "filled_quantity": qty,
+                "filled_avg_price": filled_price,
+                "status": status,
+                "filled_at": datetime.now().isoformat(),
+            }
+        ).eq("id", order_id).execute()
+
+    def cancel_paper_order(self, order_id: int) -> None:
+        """Cancel a paper order.
+
+        Args:
+            order_id: Order ID.
+        """
+        self._client.table("paper_orders").update(
+            {"status": "cancelled", "cancelled_at": datetime.now().isoformat()}
+        ).eq("id", order_id).execute()
+
+    def get_paper_orders(
+        self,
+        account_id: int,
+        status: str | None = None,
+        limit: int = 100,
+    ) -> list[dict[str, Any]]:
+        """Get paper orders for an account.
+
+        Args:
+            account_id: Account ID.
+            status: Optional status filter.
+            limit: Maximum records.
+
+        Returns:
+            List of order records.
+        """
+        query = (
+            self._client.table("paper_orders")
+            .select("*, instruments(symbol, name)")
+            .eq("account_id", account_id)
+        )
+
+        if status:
+            query = query.eq("status", status)
+
+        result = query.order("submitted_at", desc=True).limit(limit).execute()
+        return [dict(r) for r in result.data]
+
+    def upsert_paper_position(
+        self,
+        account_id: int,
+        instrument_id: int,
+        quantity: int,
+        avg_entry_price: float,
+        current_price: float | None = None,
+        realized_pnl: float = 0.0,
+    ) -> int:
+        """Upsert a paper trading position.
+
+        Args:
+            account_id: Account ID.
+            instrument_id: Instrument ID.
+            quantity: Position size (0 to close).
+            avg_entry_price: Average entry price.
+            current_price: Current market price.
+            realized_pnl: Realized P&L from this position.
+
+        Returns:
+            Position ID.
+        """
+        unrealized_pnl = None
+        if current_price and quantity > 0:
+            unrealized_pnl = (current_price - avg_entry_price) * quantity
+
+        data = {
+            "account_id": account_id,
+            "instrument_id": instrument_id,
+            "quantity": quantity,
+            "avg_entry_price": avg_entry_price,
+            "current_price": current_price,
+            "unrealized_pnl": unrealized_pnl,
+            "realized_pnl": realized_pnl,
+            "updated_at": datetime.now().isoformat(),
+        }
+
+        result = (
+            self._client.table("paper_positions")
+            .upsert(data, on_conflict="account_id,instrument_id")
+            .execute()
+        )
+        return int(result.data[0]["id"])
+
+    def get_paper_positions(
+        self, account_id: int, include_closed: bool = False
+    ) -> list[dict[str, Any]]:
+        """Get paper positions for an account.
+
+        Args:
+            account_id: Account ID.
+            include_closed: Include zero-quantity positions.
+
+        Returns:
+            List of position records.
+        """
+        query = (
+            self._client.table("paper_positions")
+            .select("*, instruments(symbol, name, sector)")
+            .eq("account_id", account_id)
+        )
+
+        if not include_closed:
+            query = query.gt("quantity", 0)
+
+        result = query.order("instrument_id").execute()
+        return [dict(r) for r in result.data]
+
+    def get_paper_position(
+        self, account_id: int, instrument_id: int
+    ) -> dict[str, Any] | None:
+        """Get a specific paper position.
+
+        Args:
+            account_id: Account ID.
+            instrument_id: Instrument ID.
+
+        Returns:
+            Position record or None.
+        """
+        result = (
+            self._client.table("paper_positions")
+            .select("*, instruments(symbol, name)")
+            .eq("account_id", account_id)
+            .eq("instrument_id", instrument_id)
+            .limit(1)
+            .execute()
+        )
+
+        if result.data:
+            return dict(result.data[0])
+        return None
+
+    def create_portfolio_snapshot(
+        self,
+        account_id: int,
+        snapshot_date: str,
+        cash_balance: float,
+        positions_value: float,
+        total_value: float,
+        daily_pnl: float | None = None,
+        daily_return: float | None = None,
+        positions_snapshot: dict[str, Any] | None = None,
+    ) -> int:
+        """Create a portfolio snapshot.
+
+        Args:
+            account_id: Account ID.
+            snapshot_date: Snapshot date (YYYY-MM-DD).
+            cash_balance: Cash balance.
+            positions_value: Total positions value.
+            total_value: Total portfolio value.
+            daily_pnl: Daily P&L.
+            daily_return: Daily return percentage.
+            positions_snapshot: Detailed positions data.
+
+        Returns:
+            Snapshot ID.
+        """
+        data = {
+            "account_id": account_id,
+            "snapshot_date": snapshot_date,
+            "cash_balance": cash_balance,
+            "positions_value": positions_value,
+            "total_value": total_value,
+            "daily_pnl": daily_pnl,
+            "daily_return": daily_return,
+            "positions_snapshot": positions_snapshot or {},
+        }
+
+        result = (
+            self._client.table("portfolio_snapshots")
+            .upsert(data, on_conflict="account_id,snapshot_date")
+            .execute()
+        )
+        return int(result.data[0]["id"])
+
+    def get_portfolio_snapshots(
+        self, account_id: int, limit: int = 90
+    ) -> list[dict[str, Any]]:
+        """Get portfolio snapshots for an account.
+
+        Args:
+            account_id: Account ID.
+            limit: Maximum records.
+
+        Returns:
+            List of snapshot records (most recent first).
+        """
+        result = (
+            self._client.table("portfolio_snapshots")
+            .select("*")
+            .eq("account_id", account_id)
+            .order("snapshot_date", desc=True)
+            .limit(limit)
+            .execute()
+        )
+        return [dict(r) for r in result.data]
+
+    def get_latest_portfolio_snapshot(
+        self, account_id: int
+    ) -> dict[str, Any] | None:
+        """Get the latest portfolio snapshot.
+
+        Args:
+            account_id: Account ID.
+
+        Returns:
+            Latest snapshot or None.
+        """
+        result = (
+            self._client.table("portfolio_snapshots")
+            .select("*")
+            .eq("account_id", account_id)
+            .order("snapshot_date", desc=True)
+            .limit(1)
+            .execute()
+        )
+
+        if result.data:
+            return dict(result.data[0])
+        return None
+
+    def get_latest_price_for_instrument(
+        self, instrument_id: int
+    ) -> dict[str, Any] | None:
+        """Get the latest price for an instrument.
+
+        Args:
+            instrument_id: Instrument ID.
+
+        Returns:
+            Latest price record or None.
+        """
+        result = (
+            self._client.table("daily_prices")
+            .select("*")
+            .eq("instrument_id", instrument_id)
+            .order("trade_date", desc=True)
+            .limit(1)
+            .execute()
+        )
+
+        if result.data:
+            return dict(result.data[0])
+        return None
+
+    def get_prices_for_date(self, trade_date: str) -> list[dict[str, Any]]:
+        """Get all prices for a specific date.
+
+        Args:
+            trade_date: Trade date (YYYY-MM-DD).
+
+        Returns:
+            List of price records.
+        """
+        result = (
+            self._client.table("daily_prices")
+            .select("*")
+            .eq("trade_date", trade_date)
+            .execute()
+        )
+        return [dict(r) for r in result.data]

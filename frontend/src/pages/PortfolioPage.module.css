@@ -20,6 +20,14 @@
     margin-bottom: var(--spacing-md);
 }
 
+.headerTop {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: var(--spacing-lg);
+}
+
 .title {
     font-size: 2.5rem;
     font-weight: 700;
@@ -35,6 +43,38 @@
     line-height: 1.6;
 }
 
+.accountSelector {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.accountSelector label {
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+}
+
+.select {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.select:hover {
+    border-color: var(--color-border-hover);
+}
+
+.select:focus {
+    outline: none;
+    border-color: var(--color-accent-blue);
+    box-shadow: 0 0 0 2px var(--color-accent-blue-dim);
+}
+
 .grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -43,15 +83,15 @@
 
 .metricsGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: var(--spacing-lg);
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--spacing-md);
 }
 
 .metric {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-lg);
+    gap: var(--spacing-xs);
+    padding: var(--spacing-md);
     background-color: var(--color-bg-secondary);
     border-radius: var(--radius-lg);
     border: 1px solid var(--color-border);
@@ -73,25 +113,243 @@
 }
 
 .metricValue {
-    font-size: 2rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: var(--color-text-primary);
     line-height: 1.2;
     letter-spacing: -0.025em;
 }
 
-.metricValue.positive {
+.metricSubvalue {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.metricValue.positive,
+.metricSubvalue.positive,
+.positive {
     color: var(--color-accent-green-bright);
 }
 
-.metricValue.negative {
+.metricValue.negative,
+.metricSubvalue.negative,
+.negative {
     color: var(--color-accent-red-bright);
+}
+
+.metricValue.warning,
+.warning {
+    color: var(--color-accent-yellow);
 }
 
 .metricValue.neutral {
     color: var(--color-accent-blue-bright);
 }
 
+/* Risk Status */
+.riskStatus {
+    display: flex;
+    justify-content: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.complianceBadge {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--radius-full);
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+}
+
+.complianceBadge.compliant {
+    background-color: var(--color-accent-green-dim);
+    color: var(--color-accent-green-bright);
+    border: 1px solid var(--color-accent-green);
+}
+
+.complianceBadge.violation {
+    background-color: var(--color-accent-red-dim);
+    color: var(--color-accent-red-bright);
+    border: 1px solid var(--color-accent-red);
+}
+
+.riskWarning {
+    border-color: var(--color-accent-red) !important;
+}
+
+.violations {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    background-color: var(--color-accent-red-dim);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-accent-red);
+}
+
+.violationItem {
+    color: var(--color-accent-red-bright);
+    font-size: 0.875rem;
+    padding: var(--spacing-xs) 0;
+}
+
+.violationItem::before {
+    content: "! ";
+    font-weight: bold;
+}
+
+/* Equity Chart */
+.chartSection {
+    margin-top: var(--spacing-md);
+}
+
+.equityChart {
+    padding: var(--spacing-md);
+}
+
+.chartBars {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 150px;
+    padding: var(--spacing-sm) 0;
+}
+
+.chartBar {
+    flex: 1;
+    min-width: 4px;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    transition: all var(--transition-base);
+    cursor: pointer;
+}
+
+.chartBar.positive {
+    background-color: var(--color-accent-green);
+}
+
+.chartBar.negative {
+    background-color: var(--color-accent-red);
+}
+
+.chartBar:hover {
+    opacity: 0.8;
+    transform: scaleY(1.02);
+}
+
+.chartLabels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin-top: var(--spacing-sm);
+}
+
+/* Tables */
+.tableWrapper {
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.table th,
+.table td {
+    padding: var(--spacing-sm) var(--spacing-md);
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.table th {
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    background-color: var(--color-bg-secondary);
+}
+
+.table tr:hover td {
+    background-color: var(--color-bg-secondary);
+}
+
+.table .right {
+    text-align: right;
+}
+
+.symbol {
+    font-weight: 600;
+    color: var(--color-accent-blue-bright);
+}
+
+.name {
+    color: var(--color-text-secondary);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pnlPct {
+    font-size: 0.75rem;
+    opacity: 0.8;
+}
+
+/* Badges */
+.sideBadge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.sideBadge.buy {
+    background-color: var(--color-accent-green-dim);
+    color: var(--color-accent-green-bright);
+}
+
+.sideBadge.sell {
+    background-color: var(--color-accent-red-dim);
+    color: var(--color-accent-red-bright);
+}
+
+.statusBadge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.statusBadge.filled {
+    background-color: var(--color-accent-green-dim);
+    color: var(--color-accent-green-bright);
+}
+
+.statusBadge.pending {
+    background-color: var(--color-accent-yellow-dim);
+    color: var(--color-accent-yellow);
+}
+
+.statusBadge.cancelled {
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-muted);
+}
+
+.statusBadge.rejected {
+    background-color: var(--color-accent-red-dim);
+    color: var(--color-accent-red-bright);
+}
+
+.statusBadge.partial {
+    background-color: var(--color-accent-blue-dim);
+    color: var(--color-accent-blue-bright);
+}
+
+/* Empty State */
 .emptyState {
     text-align: center;
     padding: var(--spacing-2xl);
@@ -107,6 +365,18 @@
     font-size: 1.125rem;
 }
 
+.codeHint {
+    display: block;
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    background-color: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    color: var(--color-accent-blue-bright);
+    border: 1px solid var(--color-border);
+}
+
 .hint {
     margin-top: var(--spacing-md);
     font-size: 0.875rem;
@@ -118,6 +388,13 @@
     border: 1px solid var(--color-border);
 }
 
+.loading {
+    text-align: center;
+    padding: var(--spacing-2xl);
+    color: var(--color-text-secondary);
+    font-size: 1rem;
+}
+
 @media (max-width: 768px) {
     .title {
         font-size: 2rem;
@@ -127,16 +404,33 @@
         font-size: 1rem;
     }
 
+    .headerTop {
+        flex-direction: column;
+    }
+
     .grid {
         grid-template-columns: 1fr;
     }
 
     .metricsGrid {
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        grid-template-columns: repeat(2, 1fr);
     }
 
     .metricValue {
-        font-size: 1.75rem;
+        font-size: 1.25rem;
+    }
+
+    .chartBars {
+        height: 100px;
+    }
+
+    .table {
+        font-size: 0.8rem;
+    }
+
+    .table th,
+    .table td {
+        padding: var(--spacing-xs) var(--spacing-sm);
     }
 }
 
@@ -150,6 +444,6 @@
     }
 
     .metric {
-        padding: var(--spacing-md);
+        padding: var(--spacing-sm);
     }
 }

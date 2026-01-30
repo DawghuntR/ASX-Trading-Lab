@@ -1,7 +1,7 @@
 ---
 id: 027
 name: Portfolio Performance Metrics
-status: Planned
+status: Completed
 ---
 
 # 027 - Portfolio Performance Metrics
