@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0" />
+        <title>ASX Trading Lab</title>
+        <script>
+            // GitHub Pages SPA redirect
+            // Redirects 404 requests back to index.html for client-side routing
+            const path = window.location.pathname;
+            const search = window.location.search;
+            const hash = window.location.hash;
+
+            // Store the original URL in sessionStorage
+            sessionStorage.setItem("redirect", path + search + hash);
+
+            // Redirect to the base path
+            const basePath = "/ASX-Trading-Lab/";
+            window.location.replace(basePath);
+        </script>
+    </head>
+    <body>
+        <noscript>
+            <p>
+                JavaScript is required to view this application. Please enable
+                JavaScript and reload the page.
+            </p>
+        </noscript>
+    </body>
+</html>

@@ -1,0 +1,81 @@
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--radius-md);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all var(--transition-fast);
+    border: 1px solid transparent;
+}
+
+.healthy {
+    background-color: rgba(16, 185, 129, 0.15);
+    color: var(--color-accent-green-bright);
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.healthy:hover {
+    background-color: rgba(16, 185, 129, 0.2);
+}
+
+.warning {
+    background-color: rgba(245, 158, 11, 0.15);
+    color: var(--color-accent-yellow-bright);
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.warning:hover {
+    background-color: rgba(245, 158, 11, 0.2);
+}
+
+.error {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: var(--color-accent-red-bright);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.error:hover {
+    background-color: rgba(239, 68, 68, 0.2);
+}
+
+.unknown {
+    background-color: rgba(180, 180, 200, 0.15);
+    color: var(--color-text-secondary);
+    border-color: rgba(180, 180, 200, 0.3);
+}
+
+.unknown:hover {
+    background-color: rgba(180, 180, 200, 0.2);
+}
+
+/* Icon support */
+.badge::before {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-right: var(--spacing-xs);
+}
+
+.healthy::before {
+    background-color: var(--color-accent-green-bright);
+    box-shadow: 0 0 4px var(--color-accent-green);
+}
+
+.warning::before {
+    background-color: var(--color-accent-yellow-bright);
+    box-shadow: 0 0 4px var(--color-accent-yellow);
+}
+
+.error::before {
+    background-color: var(--color-accent-red-bright);
+    box-shadow: 0 0 4px var(--color-accent-red);
+}
+
+.unknown::before {
+    background-color: var(--color-text-muted);
+}

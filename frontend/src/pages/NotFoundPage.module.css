@@ -1,0 +1,131 @@
+.page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    animation: fadeIn var(--transition-slow);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.content {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-xl);
+}
+
+.code {
+    font-size: 8rem;
+    font-weight: 700;
+    color: var(--color-accent-blue);
+    line-height: 1;
+    letter-spacing: -0.05em;
+    background: linear-gradient(
+        135deg,
+        var(--color-accent-blue) 0%,
+        var(--color-accent-blue-bright) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.title {
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    letter-spacing: -0.025em;
+}
+
+.message {
+    color: var(--color-text-secondary);
+    max-width: 400px;
+    line-height: 1.6;
+    font-size: 1.125rem;
+}
+
+.link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-xl);
+    background: linear-gradient(
+        135deg,
+        var(--color-accent-blue) 0%,
+        var(--color-accent-blue-bright) 100%
+    );
+    color: white;
+    border-radius: var(--radius-lg);
+    font-weight: 600;
+    text-decoration: none;
+    transition: all var(--transition-base);
+    box-shadow: var(--shadow-md);
+}
+
+.link:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    text-decoration: none;
+}
+
+.link:focus {
+    outline: 2px solid var(--color-border-focus);
+    outline-offset: 4px;
+}
+
+.link::before {
+    content: "←";
+    font-size: 1.25rem;
+}
+
+@media (max-width: 768px) {
+    .code {
+        font-size: 6rem;
+    }
+
+    .title {
+        font-size: 1.5rem;
+    }
+
+    .message {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .code {
+        font-size: 4rem;
+    }
+
+    .title {
+        font-size: 1.25rem;
+    }
+
+    .content {
+        padding: var(--spacing-lg);
+    }
+}
