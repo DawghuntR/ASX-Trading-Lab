@@ -1,7 +1,7 @@
 ---
 id: 005
 name: Supabase Cloud Project Setup
-status: Planned
+status: Completed
 ---
 
 # 005 - Supabase Cloud Project Setup
@@ -28,3 +28,9 @@ Provision and configure a Supabase Cloud project to serve as the system-of-recor
   - the GitHub Pages frontend (anon key)
   - the jobs runner (service role key)
 - Keys are stored and referenced correctly (service role key never used in the frontend).
+
+## Implementation Notes
+
+- Database schema and access model are defined under `database/migrations/`.
+- Frontend uses public config in `frontend/.env.example` and initializes Supabase in `frontend/src/lib/supabase.ts`.
+- Jobs runner uses secrets in `jobs/.env.example` and loads config via `jobs/src/asx_jobs/config.py`.

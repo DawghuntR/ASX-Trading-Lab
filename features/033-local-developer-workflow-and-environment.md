@@ -1,7 +1,7 @@
 ---
 id: 033
 name: Local Developer Workflow & Environment
-status: Planned
+status: Completed
 ---
 
 # 033 - Local Developer Workflow & Environment
@@ -28,3 +28,9 @@ Primary documented platform: **Ubuntu 24.04.3 LTS**.
 - A new developer can follow the docs to run the UI locally against Supabase Cloud.
 - A new developer can run the jobs runner in a dry-run or limited-symbol mode.
 - All commands and paths in docs are validated against Ubuntu (Linux-first).
+
+## Implementation Notes
+
+- Frontend setup and scripts: `frontend/README.md`
+- Jobs runner setup and CLI usage: `jobs/README.md`
+- Deployment on Ubuntu (systemd timer): `deploy/README.md`

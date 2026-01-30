@@ -1,7 +1,7 @@
 ---
 id: 000
 name: Features Index
-status: Planned
+status: Completed
 ---
 
 # Features Index

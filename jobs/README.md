@@ -55,6 +55,48 @@ asx-jobs symbols --no-metadata
 ```
 
 ---
+## Paper trading
+
+Paper trading is implemented as an end-of-day (EOD) ledger and can be operated via CLI.
+
+Create an account:
+
+```bash
+asx-jobs paper account create "My Account" --balance 100000
+asx-jobs paper account list
+asx-jobs paper account show 1
+```
+
+Submit orders (filled at EOD close in v1; limit orders use day high/low eligibility):
+
+```bash
+asx-jobs paper order buy BHP 100 --account 1
+asx-jobs paper order sell CBA 50 --account 1 --limit 95.00
+asx-jobs paper order list --account 1
+```
+
+Execute and snapshot:
+
+```bash
+asx-jobs paper execute --date 2026-01-30
+asx-jobs paper snapshot --account 1 --date 2026-01-30
+```
+
+Performance and risk reports:
+
+```bash
+asx-jobs paper metrics --account 1
+asx-jobs paper risk --account 1
+```
+
+Related features:
+
+- Feature **026** (paper ledger)
+- Feature **027** (portfolio performance metrics)
+- Feature **028** (risk rules & metrics)
+
+
+---
 ## Explore
 Key paths in this package:
 
