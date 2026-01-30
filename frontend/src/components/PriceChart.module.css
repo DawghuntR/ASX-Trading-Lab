@@ -1,0 +1,91 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0 var(--spacing-sm);
+}
+
+.currentPrice {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    font-family: "Fira Code", monospace;
+}
+
+.change {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.change.positive {
+    color: var(--color-accent-green);
+}
+
+.change.negative {
+    color: var(--color-accent-red);
+}
+
+.chart {
+    width: 100%;
+    height: auto;
+    min-height: 150px;
+}
+
+.gridLine {
+    stroke: var(--color-border);
+    stroke-width: 0.5;
+    stroke-dasharray: 2, 2;
+}
+
+.axisLabel {
+    fill: var(--color-text-muted);
+    font-size: 3px;
+    font-family: "Fira Code", monospace;
+}
+
+.line {
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.linePositive {
+    stroke: var(--color-accent-green);
+}
+
+.lineNegative {
+    stroke: var(--color-accent-red);
+}
+
+.area {
+    opacity: 0.5;
+}
+
+.footer {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 var(--spacing-sm);
+}
+
+.dateLabel {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+}
+
+.empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 150px;
+    color: var(--color-text-muted);
+    font-style: italic;
+    background-color: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+    border: 1px dashed var(--color-border);
+}

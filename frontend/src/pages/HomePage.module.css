@@ -100,6 +100,93 @@
     border: 1px dashed var(--color-border);
 }
 
+.loading {
+    color: var(--color-text-muted);
+    padding: var(--spacing-md);
+    text-align: center;
+}
+
+.signalList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.signalItem {
+    border-radius: var(--radius-sm);
+    transition: background-color var(--transition-fast);
+}
+
+.signalItem:hover {
+    background-color: var(--color-bg-tertiary);
+}
+
+.signalLink {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    text-decoration: none;
+    color: var(--color-text-primary);
+}
+
+.signalSymbol {
+    font-weight: 600;
+    font-family: "Fira Code", monospace;
+    min-width: 60px;
+    color: var(--color-accent-blue-bright);
+}
+
+.signalType {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.signalDirection {
+    margin-left: auto;
+    font-size: 0.875rem;
+    text-transform: capitalize;
+}
+
+.signalDirection.bullish {
+    color: var(--color-accent-green);
+}
+
+.signalDirection.bearish {
+    color: var(--color-accent-red);
+}
+
+.signalStrength {
+    margin-left: auto;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-accent-yellow);
+}
+
+.viewAll {
+    display: block;
+    text-align: center;
+    padding: var(--spacing-md);
+    margin-top: var(--spacing-sm);
+    color: var(--color-accent-blue-bright);
+    text-decoration: none;
+    font-size: 0.875rem;
+    border-top: 1px solid var(--color-border);
+    transition: color var(--transition-fast);
+}
+
+.viewAll:hover {
+    color: var(--color-accent-blue);
+}
+
 .setupContent {
     display: flex;
     flex-direction: column;

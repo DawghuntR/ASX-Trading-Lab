@@ -109,6 +109,118 @@
     color: var(--color-text-muted);
 }
 
+.loading {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--color-text-muted);
+}
+
+.error {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--color-accent-red);
+}
+
+.tableWrapper {
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+}
+
+.table th {
+    text-align: left;
+    padding: var(--spacing-md);
+    border-bottom: 2px solid var(--color-border);
+    color: var(--color-text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.table td {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+}
+
+.signalRow {
+    transition: background-color var(--transition-fast);
+}
+
+.signalRow:hover {
+    background-color: var(--color-bg-tertiary);
+}
+
+.symbolCell {
+    font-weight: 600;
+}
+
+.symbolLink {
+    color: var(--color-accent-blue-bright);
+    text-decoration: none;
+    font-family: "Fira Code", monospace;
+}
+
+.symbolLink:hover {
+    text-decoration: underline;
+}
+
+.nameCell {
+    color: var(--color-text-secondary);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.typeCell {
+    white-space: nowrap;
+}
+
+.typeBadge {
+    display: inline-block;
+    padding: 2px 8px;
+    background-color: var(--color-bg-tertiary);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.directionCell {
+    text-transform: capitalize;
+    font-weight: 500;
+}
+
+.directionCell.bullish {
+    color: var(--color-accent-green);
+}
+
+.directionCell.bearish {
+    color: var(--color-accent-red);
+}
+
+.strengthCell {
+    font-family: "Fira Code", monospace;
+    font-weight: 600;
+    color: var(--color-accent-yellow);
+}
+
+.descriptionCell {
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 @media (max-width: 768px) {
     .title {
         font-size: 2rem;

@@ -1,0 +1,18 @@
+[Unit]
+Description=ASX Trading Lab Daily Jobs Timer
+Documentation=https://github.com/dawghuntr/ASX-Trading-Lab
+
+[Timer]
+# Run at 12:00 Sydney time (AEST/AEDT)
+# Note: systemd uses the system timezone. Ensure TZ is set correctly.
+OnCalendar=*-*-* 12:00:00
+Persistent=true
+
+# Add some randomization to avoid exact scheduling issues
+RandomizedDelaySec=300
+
+# Accuracy - wake up within 1 minute of scheduled time
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

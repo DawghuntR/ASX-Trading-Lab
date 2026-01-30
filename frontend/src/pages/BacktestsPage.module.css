@@ -35,6 +35,90 @@
     line-height: 1.6;
 }
 
+.statsRow {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.statCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-lg);
+    background-color: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+}
+
+.statValue {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    font-family: "Fira Code", monospace;
+}
+
+.statLabel {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.filters {
+    margin-bottom: var(--spacing-md);
+}
+
+.filterRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-lg);
+    align-items: flex-end;
+    padding: var(--spacing-lg);
+    background-color: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+}
+
+.filterLabel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    flex: 1;
+    min-width: 150px;
+}
+
+.select {
+    background-color: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.9375rem;
+    min-width: 150px;
+    transition: all var(--transition-fast);
+    font-family: inherit;
+}
+
+.select:hover {
+    border-color: var(--color-border-hover);
+}
+
+.select:focus {
+    outline: none;
+    border-color: var(--color-border-focus);
+    box-shadow: var(--shadow-focus);
+}
+
+.select option {
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+}
+
 .emptyState {
     text-align: center;
     padding: var(--spacing-2xl);
@@ -76,6 +160,170 @@
     border: 1px solid var(--color-border);
 }
 
+.hint code {
+    font-family: "Fira Code", monospace;
+    background-color: var(--color-bg-primary);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+.loading {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--color-text-muted);
+}
+
+.error {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--color-accent-red);
+}
+
+.tableWrapper {
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+}
+
+.table th {
+    text-align: left;
+    padding: var(--spacing-md);
+    border-bottom: 2px solid var(--color-border);
+    color: var(--color-text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.table td {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+}
+
+.row {
+    transition: background-color var(--transition-fast);
+}
+
+.row:hover {
+    background-color: var(--color-bg-tertiary);
+}
+
+.idCell {
+    font-family: "Fira Code", monospace;
+    font-weight: 600;
+}
+
+.idLink {
+    color: var(--color-accent-blue-bright);
+    text-decoration: none;
+}
+
+.idLink:hover {
+    text-decoration: underline;
+}
+
+.strategyCell {
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.nameCell {
+    color: var(--color-text-secondary);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dateCell {
+    white-space: nowrap;
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+}
+
+.capitalCell {
+    font-family: "Fira Code", monospace;
+    white-space: nowrap;
+}
+
+.returnCell {
+    font-family: "Fira Code", monospace;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.positive {
+    color: var(--color-accent-green);
+}
+
+.negative {
+    color: var(--color-accent-red);
+}
+
+.statusCell {
+    white-space: nowrap;
+}
+
+.statusBadge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.statusCompleted {
+    background-color: rgba(16, 185, 129, 0.15);
+    color: var(--color-accent-green);
+}
+
+.statusRunning {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: var(--color-accent-blue-bright);
+}
+
+.statusPending {
+    background-color: rgba(251, 191, 36, 0.15);
+    color: var(--color-accent-yellow);
+}
+
+.statusFailed {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: var(--color-accent-red);
+}
+
+.actionsCell {
+    text-align: right;
+}
+
+.viewButton {
+    display: inline-block;
+    padding: 6px 12px;
+    background-color: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all var(--transition-fast);
+}
+
+.viewButton:hover {
+    background-color: var(--color-accent-blue-bright);
+    border-color: var(--color-accent-blue-bright);
+    color: white;
+}
+
 @media (max-width: 768px) {
     .title {
         font-size: 2rem;
@@ -85,16 +333,22 @@
         font-size: 1rem;
     }
 
-    .emptyState {
-        padding: var(--spacing-xl);
+    .statsRow {
+        grid-template-columns: repeat(2, 1fr);
     }
 
-    .emptyState .icon {
-        font-size: 3rem;
+    .filterRow {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--spacing-md);
     }
 
-    .emptyState h3 {
-        font-size: 1.25rem;
+    .filterLabel {
+        min-width: 100%;
+    }
+
+    .statValue {
+        font-size: 1.5rem;
     }
 }
 
@@ -103,7 +357,32 @@
         font-size: 1.75rem;
     }
 
+    .statsRow {
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-md);
+    }
+
+    .statCard {
+        padding: var(--spacing-md);
+    }
+
+    .statValue {
+        font-size: 1.25rem;
+    }
+
+    .filterRow {
+        padding: var(--spacing-md);
+    }
+
     .emptyState {
         padding: var(--spacing-lg);
+    }
+
+    .emptyState .icon {
+        font-size: 3rem;
+    }
+
+    .emptyState h3 {
+        font-size: 1.25rem;
     }
 }

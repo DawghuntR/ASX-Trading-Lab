@@ -1,7 +1,7 @@
 ---
 id: 021
 name: ASX Announcements Ingestion (HTML Scraper)
-status: Planned
+status: Completed
 ---
 
 # 021 - ASX Announcements Ingestion (HTML Scraper)

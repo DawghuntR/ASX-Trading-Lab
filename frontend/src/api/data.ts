@@ -1,0 +1,375 @@
+/**
+ * API functions for fetching data from Supabase.
+ * All functions handle the case where Supabase is not configured.
+ */
+
+import { supabase, isSupabaseConfigured } from "../lib/supabase";
+import type { Database } from "../types/database";
+
+type Instrument = Database["public"]["Tables"]["instruments"]["Row"];
+type DailyPrice = Database["public"]["Tables"]["daily_prices"]["Row"];
+type Signal = Database["public"]["Tables"]["signals"]["Row"];
+type Announcement = Database["public"]["Tables"]["announcements"]["Row"];
+
+export interface IngestStatus {
+    total_instruments: number;
+    active_instruments: number;
+    asx300_instruments: number;
+    latest_price_date: string | null;
+    prices_today: number;
+    signals_today: number;
+}
+
+export interface SignalWithInstrument extends Signal {
+    instruments: Pick<Instrument, "symbol" | "name"> | null;
+}
+
+export interface PriceWithInstrument extends DailyPrice {
+    instruments: Pick<Instrument, "symbol" | "name" | "sector"> | null;
+}
+
+export interface AnnouncementWithInstrument extends Announcement {
+    instruments: Pick<Instrument, "symbol" | "name"> | null;
+}
+
+export async function getIngestStatus(): Promise<IngestStatus | null> {
+    if (!isSupabaseConfigured || !supabase) return null;
+
+    const { data, error } = await supabase.rpc("get_ingest_status");
+
+    if (error) {
+        console.error("Error fetching ingest status:", error);
+        return null;
+    }
+
+    return data as IngestStatus;
+}
+
+export async function getTodaysSignals(
+    limit: number = 50
+): Promise<SignalWithInstrument[]> {
+    if (!isSupabaseConfigured || !supabase) return [];
+
+    const today = new Date().toISOString().split("T")[0];
+
+    const { data, error } = await supabase
+        .from("signals")
+        .select("*, instruments(symbol, name)")
+        .eq("signal_date", today)
+        .order("signal_strength", { ascending: false, nullsFirst: false })
+        .limit(limit);
+
+    if (error) {
+        console.error("Error fetching signals:", error);
+        return [];
+    }
+
+    return (data as SignalWithInstrument[]) || [];
+}
+
+export async function getSignalsByDate(
+    date: string,
+    signalType?: string,
+    limit: number = 100
+): Promise<SignalWithInstrument[]> {
+    if (!isSupabaseConfigured || !supabase) return [];
+
+    let query = supabase
+        .from("signals")
+        .select("*, instruments(symbol, name)")
+        .eq("signal_date", date)
+        .order("signal_strength", { ascending: false, nullsFirst: false })
+        .limit(limit);
+
+    if (signalType && signalType !== "all") {
+        query = query.eq("signal_type", signalType);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+        console.error("Error fetching signals:", error);
+        return [];
+    }
+
+    return (data as SignalWithInstrument[]) || [];
+}
+
+export async function getTopMovers(
+    limit: number = 10
+): Promise<PriceWithInstrument[]> {
+    if (!isSupabaseConfigured || !supabase) return [];
+
+    const { data, error } = await supabase
+        .from("daily_prices")
+        .select("*, instruments(symbol, name, sector)")
+        .order("trade_date", { ascending: false })
+        .limit(limit * 10);
+
+    if (error) {
+        console.error("Error fetching top movers:", error);
+        return [];
+    }
+
+    return (data as PriceWithInstrument[]) || [];
+}
+
+export async function getInstrumentBySymbol(
+    symbol: string
+): Promise<Instrument | null> {
+    if (!isSupabaseConfigured || !supabase) return null;
+
+    const { data, error } = await supabase
+        .from("instruments")
+        .select("*")
+        .eq("symbol", symbol.toUpperCase())
+        .single();
+
+    if (error) {
+        console.error("Error fetching instrument:", error);
+        return null;
+    }
+
+    return data;
+}
+
+export async function getPriceHistory(
+    symbol: string,
+    days: number = 90
+): Promise<DailyPrice[]> {
+    if (!isSupabaseConfigured || !supabase) return [];
+
+    const instrument = await getInstrumentBySymbol(symbol);
+    if (!instrument) return [];
+
+    const { data, error } = await supabase
+        .from("daily_prices")
+        .select("*")
+        .eq("instrument_id", instrument.id)
+        .order("trade_date", { ascending: false })
+        .limit(days);
+
+    if (error) {
+        console.error("Error fetching price history:", error);
+        return [];
+    }
+
+    return data || [];
+}
+
+export async function getSignalsForSymbol(
+    symbol: string,
+    days: number = 30
+): Promise<Signal[]> {
+    if (!isSupabaseConfigured || !supabase) return [];
+
+    const instrument = await getInstrumentBySymbol(symbol);
+    if (!instrument) return [];
+
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    const { data, error } = await supabase
+        .from("signals")
+        .select("*")
+        .eq("instrument_id", instrument.id)
+        .gte("signal_date", startDate.toISOString().split("T")[0])
+        .order("signal_date", { ascending: false });
+
+    if (error) {
+        console.error("Error fetching signals:", error);
+        return [];
+    }
+
+    return data || [];
+}
+
+export async function getAnnouncementsForSymbol(
+    symbol: string,
+    limit: number = 20
+): Promise<Announcement[]> {
+    if (!isSupabaseConfigured || !supabase) return [];
+
+    const instrument = await getInstrumentBySymbol(symbol);
+    if (!instrument) return [];
+
+    const { data, error } = await supabase
+        .from("announcements")
+        .select("*")
+        .eq("instrument_id", instrument.id)
+        .order("announced_at", { ascending: false })
+        .limit(limit);
+
+    if (error) {
+        console.error("Error fetching announcements:", error);
+        return [];
+    }
+
+    return data || [];
+}
+
+export async function searchInstruments(
+    query: string,
+    limit: number = 10
+): Promise<Instrument[]> {
+    if (!isSupabaseConfigured || !supabase || query.length < 1) return [];
+
+    const { data, error } = await supabase
+        .from("instruments")
+        .select("*")
+        .eq("is_active", true)
+        .or(`symbol.ilike.%${query}%,name.ilike.%${query}%`)
+        .order("is_asx300", { ascending: false })
+        .order("symbol")
+        .limit(limit);
+
+    if (error) {
+        console.error("Error searching instruments:", error);
+        return [];
+    }
+
+    return data || [];
+}
+
+export async function getLatestPrices(
+    limit: number = 50
+): Promise<PriceWithInstrument[]> {
+    if (!isSupabaseConfigured || !supabase) return [];
+
+    const { data: latestDateResult } = await supabase
+        .from("daily_prices")
+        .select("trade_date")
+        .order("trade_date", { ascending: false })
+        .limit(1)
+        .single();
+
+    if (!latestDateResult) return [];
+
+    const { data, error } = await supabase
+        .from("daily_prices")
+        .select("*, instruments(symbol, name, sector)")
+        .eq("trade_date", (latestDateResult as { trade_date: string }).trade_date)
+        .order("volume", { ascending: false })
+        .limit(limit);
+
+    if (error) {
+        console.error("Error fetching latest prices:", error);
+        return [];
+    }
+
+    return (data as PriceWithInstrument[]) || [];
+}
+
+type BacktestRun = Database["public"]["Tables"]["backtest_runs"]["Row"];
+type BacktestMetrics = Database["public"]["Tables"]["backtest_metrics"]["Row"];
+type BacktestTrade = Database["public"]["Tables"]["backtest_trades"]["Row"];
+type Strategy = Database["public"]["Tables"]["strategies"]["Row"];
+
+export interface BacktestRunWithStrategy extends BacktestRun {
+    strategies: Pick<Strategy, "name" | "description"> | null;
+}
+
+export interface BacktestTradeWithInstrument extends BacktestTrade {
+    instruments: Pick<Instrument, "symbol" | "name"> | null;
+}
+
+export interface BacktestDetail {
+    run: BacktestRunWithStrategy;
+    metrics: BacktestMetrics | null;
+    trades: BacktestTradeWithInstrument[];
+}
+
+export async function getBacktestRuns(
+    limit: number = 50
+): Promise<BacktestRunWithStrategy[]> {
+    if (!isSupabaseConfigured || !supabase) return [];
+
+    const { data, error } = await supabase
+        .from("backtest_runs")
+        .select("*, strategies(name, description)")
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+    if (error) {
+        console.error("Error fetching backtest runs:", error);
+        return [];
+    }
+
+    return (data as BacktestRunWithStrategy[]) || [];
+}
+
+export async function getBacktestRunById(
+    runId: number
+): Promise<BacktestDetail | null> {
+    if (!isSupabaseConfigured || !supabase) return null;
+
+    const { data: runData, error: runError } = await supabase
+        .from("backtest_runs")
+        .select("*, strategies(name, description)")
+        .eq("id", runId)
+        .single();
+
+    if (runError || !runData) {
+        console.error("Error fetching backtest run:", runError);
+        return null;
+    }
+
+    const { data: metricsData } = await supabase
+        .from("backtest_metrics")
+        .select("*")
+        .eq("backtest_run_id", runId)
+        .single();
+
+    const { data: tradesData, error: tradesError } = await supabase
+        .from("backtest_trades")
+        .select("*, instruments(symbol, name)")
+        .eq("backtest_run_id", runId)
+        .order("entry_date", { ascending: true });
+
+    if (tradesError) {
+        console.error("Error fetching backtest trades:", tradesError);
+    }
+
+    return {
+        run: runData as BacktestRunWithStrategy,
+        metrics: metricsData as BacktestMetrics | null,
+        trades: (tradesData as BacktestTradeWithInstrument[]) || [],
+    };
+}
+
+export async function getBacktestRunsByStrategy(
+    strategyId: number,
+    limit: number = 20
+): Promise<BacktestRunWithStrategy[]> {
+    if (!isSupabaseConfigured || !supabase) return [];
+
+    const { data, error } = await supabase
+        .from("backtest_runs")
+        .select("*, strategies(name, description)")
+        .eq("strategy_id", strategyId)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+    if (error) {
+        console.error("Error fetching backtest runs:", error);
+        return [];
+    }
+
+    return (data as BacktestRunWithStrategy[]) || [];
+}
+
+export async function getStrategies(): Promise<Strategy[]> {
+    if (!isSupabaseConfigured || !supabase) return [];
+
+    const { data, error } = await supabase
+        .from("strategies")
+        .select("*")
+        .order("name");
+
+    if (error) {
+        console.error("Error fetching strategies:", error);
+        return [];
+    }
+
+    return data || [];
+}

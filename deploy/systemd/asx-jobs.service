@@ -1,0 +1,44 @@
+[Unit]
+Description=ASX Trading Lab Daily Jobs Runner
+Documentation=https://github.com/dawghuntr/ASX-Trading-Lab
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=dawghuntr
+Group=dawghuntr
+
+# Working directory
+WorkingDirectory=/home/dawghuntr/gitRepos/ASX-Trading-Lab/jobs
+
+# Environment file with secrets
+EnvironmentFile=/home/dawghuntr/gitRepos/ASX-Trading-Lab/jobs/.env
+
+# Run the daily job
+ExecStart=/home/dawghuntr/.local/bin/asx-jobs daily
+
+# Logging to journald (structured JSON)
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=asx-jobs
+
+# Restart policy - don't restart on failure (timer will retry next day)
+Restart=no
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+ReadWritePaths=/home/dawghuntr/gitRepos/ASX-Trading-Lab/jobs
+
+# Resource limits
+MemoryMax=1G
+CPUQuota=50%
+
+# Timeout (30 minutes should be plenty for ASX300)
+TimeoutStartSec=1800
+
+[Install]
+WantedBy=multi-user.target

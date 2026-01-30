@@ -1,7 +1,7 @@
 ---
 id: 024
 name: Strategy Pack v1
-status: Planned
+status: Completed
 ---
 
 # 024 - Strategy Pack v1

@@ -4,6 +4,7 @@ import HomePage from "./pages/HomePage";
 import SignalsPage from "./pages/SignalsPage";
 import SymbolPage from "./pages/SymbolPage";
 import BacktestsPage from "./pages/BacktestsPage";
+import BacktestDetailPage from "./pages/BacktestDetailPage";
 import PortfolioPage from "./pages/PortfolioPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
@@ -28,6 +29,10 @@ function App() {
                 <Route
                     path="backtests"
                     element={<BacktestsPage />}
+                />
+                <Route
+                    path="backtests/:id"
+                    element={<BacktestDetailPage />}
                 />
                 <Route
                     path="portfolio"

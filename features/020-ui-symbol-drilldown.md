@@ -1,7 +1,7 @@
 ---
 id: 020
 name: UI - Symbol Drilldown
-status: Planned
+status: Completed
 ---
 
 # 020 - UI: Symbol Drilldown

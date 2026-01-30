@@ -1,7 +1,7 @@
 ---
 id: 023
 name: Backtesting Engine v1
-status: Planned
+status: Completed
 ---
 
 # 023 - Backtesting Engine v1

@@ -1,0 +1,425 @@
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
+    animation: fadeIn var(--transition-slow);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.header {
+    margin-bottom: var(--spacing-md);
+}
+
+.backLink {
+    display: inline-block;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    font-size: 0.875rem;
+    margin-bottom: var(--spacing-md);
+    transition: color var(--transition-fast);
+}
+
+.backLink:hover {
+    color: var(--color-accent-blue-bright);
+}
+
+.titleRow {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+.title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+}
+
+.runName {
+    color: var(--color-text-secondary);
+    font-weight: 500;
+}
+
+.subtitle {
+    color: var(--color-text-secondary);
+    font-size: 1.125rem;
+    line-height: 1.6;
+    margin-top: var(--spacing-sm);
+}
+
+.statusBadge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: var(--radius-md);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.statusCompleted {
+    background-color: rgba(16, 185, 129, 0.15);
+    color: var(--color-accent-green);
+}
+
+.statusRunning {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: var(--color-accent-blue-bright);
+}
+
+.statusPending {
+    background-color: rgba(251, 191, 36, 0.15);
+    color: var(--color-accent-yellow);
+}
+
+.statusFailed {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: var(--color-accent-red);
+}
+
+.summaryGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.metricsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.metricCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-lg);
+    background-color: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    text-align: center;
+}
+
+.metricValue {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    font-family: "Fira Code", monospace;
+}
+
+.metricLabel {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.positive {
+    color: var(--color-accent-green);
+}
+
+.negative {
+    color: var(--color-accent-red);
+}
+
+.chartContainer {
+    padding: var(--spacing-md);
+}
+
+.chartHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.chartTitle {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+}
+
+.chartValue {
+    font-size: 1.25rem;
+    font-weight: 700;
+    font-family: "Fira Code", monospace;
+}
+
+.chart {
+    width: 100%;
+    height: 200px;
+    background-color: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+}
+
+.zeroLine {
+    stroke: var(--color-border);
+    stroke-width: 0.5;
+    stroke-dasharray: 2, 2;
+}
+
+.equityLine {
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.equityLine.positive {
+    stroke: var(--color-accent-green);
+}
+
+.equityLine.negative {
+    stroke: var(--color-accent-red);
+}
+
+.chartLabels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: var(--spacing-sm);
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+}
+
+.noChart {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--color-text-muted);
+    background-color: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+}
+
+.noTrades {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--color-text-muted);
+}
+
+.tableWrapper {
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.table th {
+    text-align: left;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 2px solid var(--color-border);
+    color: var(--color-text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.6875rem;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.table td {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+}
+
+.tradeRow {
+    transition: background-color var(--transition-fast);
+}
+
+.tradeRow:hover {
+    background-color: var(--color-bg-tertiary);
+}
+
+.symbolCell {
+    font-weight: 600;
+}
+
+.symbolLink {
+    color: var(--color-accent-blue-bright);
+    text-decoration: none;
+    font-family: "Fira Code", monospace;
+}
+
+.symbolLink:hover {
+    text-decoration: underline;
+}
+
+.sideCell {
+    white-space: nowrap;
+}
+
+.sideBadge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.sideBuy {
+    background-color: rgba(16, 185, 129, 0.15);
+    color: var(--color-accent-green);
+}
+
+.sideSell {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: var(--color-accent-red);
+}
+
+.dateCell {
+    white-space: nowrap;
+    color: var(--color-text-secondary);
+}
+
+.priceCell {
+    font-family: "Fira Code", monospace;
+    white-space: nowrap;
+}
+
+.quantityCell {
+    font-family: "Fira Code", monospace;
+    text-align: right;
+}
+
+.pnlCell,
+.pnlPercentCell {
+    font-family: "Fira Code", monospace;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.reasonCell {
+    color: var(--color-text-secondary);
+    font-size: 0.8125rem;
+    text-transform: capitalize;
+}
+
+.emptyState {
+    text-align: center;
+    padding: var(--spacing-2xl);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-lg);
+}
+
+.emptyState .icon {
+    font-size: 4rem;
+    opacity: 0.5;
+}
+
+.emptyState h3 {
+    color: var(--color-text-primary);
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.emptyState p {
+    color: var(--color-text-muted);
+    max-width: 500px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.loading {
+    text-align: center;
+    padding: var(--spacing-2xl);
+    color: var(--color-text-muted);
+}
+
+.error {
+    text-align: center;
+    padding: var(--spacing-2xl);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.error h3 {
+    color: var(--color-accent-red);
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.error p {
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .title {
+        font-size: 1.75rem;
+    }
+
+    .subtitle {
+        font-size: 1rem;
+    }
+
+    .summaryGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .metricsGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .metricValue {
+        font-size: 1.25rem;
+    }
+
+    .metricCard {
+        padding: var(--spacing-md);
+    }
+}
+
+@media (max-width: 480px) {
+    .title {
+        font-size: 1.5rem;
+    }
+
+    .titleRow {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .summaryGrid {
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-md);
+    }
+
+    .metricsGrid {
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-sm);
+    }
+
+    .metricValue {
+        font-size: 1rem;
+    }
+
+    .metricLabel {
+        font-size: 0.6875rem;
+    }
+
+    .metricCard {
+        padding: var(--spacing-sm);
+    }
+}
