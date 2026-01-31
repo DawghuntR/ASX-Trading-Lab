@@ -6,6 +6,7 @@ to simulate rule-based strategies.
 
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 
 from asx_jobs.backtest.strategy import SignalType, Strategy, StrategySignal
 from asx_jobs.database import Database
@@ -264,8 +265,8 @@ class BacktestEngine:
             BacktestResult with simulation results.
         """
         if config.universe:
-            instruments = [self.db.get_instrument_by_id(i) for i in config.universe]
-            instruments = [i for i in instruments if i]
+            instruments_raw = [self.db.get_instrument_by_id(i) for i in config.universe]
+            instruments: list[dict[str, Any]] = [i for i in instruments_raw if i is not None]
         else:
             instruments = self.db.get_all_active_instruments()
 
@@ -379,12 +380,12 @@ class BacktestEngine:
             for inst_id, pos in positions.items():
                 if inst_id in prices_by_instrument:
                     prices = prices_by_instrument[inst_id]
-                    bar = next(
+                    current_bar: dict[str, Any] | None = next(
                         (p for p in prices if p["trade_date"] == trade_date),
                         None,
                     )
-                    if bar:
-                        portfolio_value += bar["close"] * pos.quantity
+                    if current_bar is not None:
+                        portfolio_value += current_bar["close"] * pos.quantity
 
             equity_curve.append((trade_date, portfolio_value))
 

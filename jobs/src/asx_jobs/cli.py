@@ -3,6 +3,7 @@
 import argparse
 import sys
 from datetime import datetime
+from typing import Any
 
 from asx_jobs.config import load_config
 from asx_jobs.database import Database
@@ -227,7 +228,7 @@ Paper Trading:
         return 1
 
 
-def handle_paper_command(args, config) -> int:
+def handle_paper_command(args: argparse.Namespace, config: Any) -> int:
     """Handle paper trading commands.
 
     Args:
@@ -262,7 +263,7 @@ def handle_paper_command(args, config) -> int:
         return 1
 
 
-def handle_account_command(args, engine: PaperTradingEngine) -> int:
+def handle_account_command(args: argparse.Namespace, engine: PaperTradingEngine) -> int:
     """Handle account subcommands."""
     if args.account_command == "create":
         try:
@@ -291,10 +292,14 @@ def handle_account_command(args, engine: PaperTradingEngine) -> int:
 
     elif args.account_command == "show":
         portfolio = engine.get_portfolio_value(args.account_id)
-        acc = engine.get_account(args.account_id)
-        if not acc:
+        if portfolio is None:
             print(f"Account {args.account_id} not found", file=sys.stderr)
             return 1
+        acc_data = engine.get_account(args.account_id)
+        if not acc_data:
+            print(f"Account {args.account_id} not found", file=sys.stderr)
+            return 1
+        acc = acc_data
 
         print(f"\nAccount: {acc['name']} (ID: {acc['id']})")
         print("=" * 50)
@@ -321,7 +326,7 @@ def handle_account_command(args, engine: PaperTradingEngine) -> int:
     return 1
 
 
-def handle_order_command(args, engine: PaperTradingEngine) -> int:
+def handle_order_command(args: argparse.Namespace, engine: PaperTradingEngine) -> int:
     """Handle order subcommands."""
     if args.order_command in ("buy", "sell"):
         order_type = "limit" if args.limit else "market"
@@ -381,7 +386,7 @@ def handle_order_command(args, engine: PaperTradingEngine) -> int:
     return 1
 
 
-def handle_execute_command(args, executor: EODExecutor) -> int:
+def handle_execute_command(args: argparse.Namespace, executor: EODExecutor) -> int:
     """Handle execute command."""
     execution_date = args.date or datetime.now().strftime("%Y-%m-%d")
 
@@ -411,7 +416,7 @@ def handle_execute_command(args, executor: EODExecutor) -> int:
     return 0
 
 
-def handle_positions_command(args, engine: PaperTradingEngine) -> int:
+def handle_positions_command(args: argparse.Namespace, engine: PaperTradingEngine) -> int:
     """Handle positions command."""
     positions = engine.get_positions(args.account)
 
@@ -434,7 +439,7 @@ def handle_positions_command(args, engine: PaperTradingEngine) -> int:
     return 0
 
 
-def handle_snapshot_command(args, engine: PaperTradingEngine) -> int:
+def handle_snapshot_command(args: argparse.Namespace, engine: PaperTradingEngine) -> int:
     """Handle snapshot command."""
     snapshot_date = args.date or datetime.now().strftime("%Y-%m-%d")
 
@@ -452,7 +457,7 @@ def handle_snapshot_command(args, engine: PaperTradingEngine) -> int:
         return 1
 
 
-def handle_metrics_command(args, analyzer: PortfolioAnalyzer) -> int:
+def handle_metrics_command(args: argparse.Namespace, analyzer: PortfolioAnalyzer) -> int:
     """Handle metrics command."""
     import json
     from dataclasses import asdict
@@ -472,7 +477,7 @@ def handle_metrics_command(args, analyzer: PortfolioAnalyzer) -> int:
         return 1
 
 
-def handle_risk_command(args, risk_manager: RiskManager) -> int:
+def handle_risk_command(args: argparse.Namespace, risk_manager: RiskManager) -> int:
     """Handle risk command."""
     import json
     from dataclasses import asdict

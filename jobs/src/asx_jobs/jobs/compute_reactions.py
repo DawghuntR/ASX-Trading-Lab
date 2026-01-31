@@ -170,7 +170,10 @@ class ComputeReactionsJob(BaseJob):
         )
         processed_ids = {r["announcement_id"] for r in existing.data}
 
-        return [a for a in result.data if a["id"] not in processed_ids]
+        unprocessed: list[dict[str, Any]] = [
+            a for a in result.data if a["id"] not in processed_ids  # type: ignore[misc]
+        ]
+        return unprocessed
 
     def _fetch_price_data(self, instrument_ids: list[int]) -> dict[int, list[dict[str, Any]]]:
         """Fetch price data for all relevant instruments."""

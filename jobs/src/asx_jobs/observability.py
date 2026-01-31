@@ -333,7 +333,7 @@ class DataQualityMonitor:
             affected_symbols = list(set(row["symbol"] for row in issues))
 
             if count > 0:
-                issue_types = {}
+                issue_types: dict[str, int] = {}
                 for issue in issues:
                     issue_type = issue["issue_type"]
                     issue_types[issue_type] = issue_types.get(issue_type, 0) + 1
@@ -369,7 +369,7 @@ class DataQualityMonitor:
         """
         logger.info("data_quality_checks_started")
 
-        results = {
+        results: dict[str, Any] = {
             "timestamp": datetime.now().isoformat(),
             "checks": {},
         }
@@ -378,7 +378,8 @@ class DataQualityMonitor:
         results["checks"]["missing_snapshot"] = self.check_missing_today_snapshot()
         results["checks"]["price_quality"] = self.check_price_quality()
 
-        total_issues = sum(check.get("count", 0) for check in results["checks"].values())
+        checks: dict[str, dict[str, Any]] = results["checks"]
+        total_issues = sum(check.get("count", 0) for check in checks.values())
         results["total_issues"] = total_issues
 
         logger.info(

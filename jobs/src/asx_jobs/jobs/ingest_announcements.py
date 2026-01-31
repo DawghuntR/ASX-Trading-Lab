@@ -192,7 +192,8 @@ class IngestAnnouncementsJob(BaseJob):
         response = (
             self.db.client.table("instruments").select("id, symbol").eq("is_active", True).execute()
         )
-        return response.data or []
+        data: list[dict[str, Any]] = response.data or []  # type: ignore[assignment]
+        return data
 
     def _fetch_announcements_for_symbol(self, symbol: str) -> list[AnnouncementRecord]:
         """Fetch announcements for a single symbol from the ASX API.

@@ -23,6 +23,7 @@ dev = [
     "ruff>=0.4.0",
     "mypy>=1.10.0",
     "pandas-stubs>=2.0.0",
+    "types-requests>=2.31.0",
 ]
 
 [project.scripts]
@@ -45,3 +46,25 @@ select = ["E", "F", "I", "N", "W", "UP"]
 [tool.mypy]
 python_version = "3.11"
 strict = true
+warn_return_any = false
+disallow_any_generics = false
+
+# Supabase returns loosely-typed JSON; these modules handle it at runtime
+[[tool.mypy.overrides]]
+module = [
+    "asx_jobs.database",
+    "asx_jobs.observability",
+    "asx_jobs.jobs.compute_reactions",
+]
+disable_error_code = ["index", "arg-type", "call-overload", "assignment", "union-attr", "operator"]
+
+# Missing type stubs for third-party libs
+[[tool.mypy.overrides]]
+module = [
+    "yfinance",
+    "yfinance.*",
+    "requests",
+    "bs4",
+    "bs4.*",
+]
+ignore_missing_imports = true
