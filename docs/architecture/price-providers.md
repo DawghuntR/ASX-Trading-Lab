@@ -15,7 +15,7 @@ Two providers are available out of the box:
 
 | Provider | Key | Description |
 |----------|-----|-------------|
-| Yahoo Finance | `yahoo` | Primary provider using the `yfinance` library. Fast and reliable for most ASX symbols. |
+| Yahoo Finance | `yahoo` | Primary provider using a lightweight HTTP adapter. Fast and reliable for most ASX symbols. |
 | ASX Scraping | `scraping` | Web scraping fallback. Slower but works when Yahoo is unavailable. |
 
 Set the default provider via environment variable:
@@ -26,7 +26,7 @@ PRICE_PROVIDER=yahoo
 
 ---
 
-## Enable fallback
+## Enable or disable fallback
 When the primary provider fails, the runner can automatically try the fallback provider. Enable this with:
 
 ```bash
@@ -34,7 +34,13 @@ PRICE_PROVIDER_FALLBACK=scraping
 PRICE_PROVIDER_FALLBACK_ENABLED=true
 ```
 
-The fallback is disabled by default for predictable behavior during development.
+Fallback is enabled by default in the jobs runner config, but you can disable it explicitly if you want predictable single-provider runs during development.
+
+Disable fallback:
+
+```bash
+PRICE_PROVIDER_FALLBACK_ENABLED=false
+```
 
 ---
 
@@ -153,16 +159,17 @@ def get_price_history(self, symbol, **kwargs):
 ## Test providers
 Run basic syntax checks:
 
+Run unit/type checks from `jobs/`:
+
 ```bash
-cd jobs
 python -m py_compile src/asx_jobs/providers/yahoo.py
 python -m py_compile src/asx_jobs/providers/scraping.py
 ```
 
-Test with real symbols:
+Test with real symbols by running a normal ingestion (recommended: do this against a dev/staging Supabase project):
 
 ```bash
-asx-jobs daily --symbols BHP,CBA --dry-run
+asx-jobs daily
 ```
 
 ---

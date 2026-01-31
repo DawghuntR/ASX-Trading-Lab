@@ -21,6 +21,12 @@ pip install -e .
 ## Configure
 Create a `.env` file in `jobs/` with the required keys.
 
+Use the template:
+
+```bash
+cp .env.example .env
+```
+
 ```bash
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here

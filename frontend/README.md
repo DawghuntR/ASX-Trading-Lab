@@ -84,6 +84,17 @@ Set the base path so routes resolve under the repository subpath.
 
 Tip: use `VITE_BASE_PATH=/` when building for a root domain.
 
+### Important: keep 404 redirect base path in sync
+
+`public/404.html` currently redirects to a hard-coded base path:
+
+```js
+const basePath = "/ASX-Trading-Lab/";
+```
+
+If you deploy under a different subpath (or a root domain), update this value to match.
+For GitHub Pages the expected path is usually `/<repo-name>/`.
+
 ---
 ## Integrate Supabase
 The client is initialized in `src/lib/supabase.ts` using public credentials.

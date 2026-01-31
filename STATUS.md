@@ -1,6 +1,6 @@
 # Project Status
 
-Updated: 2026-01-30
+Updated: 2026-01-31
 
 This status file is a high-level snapshot for stakeholders. Detailed specs and implementation notes live in [`features/`](./features).
 
@@ -24,6 +24,15 @@ The core “rails” are in place: Supabase schema + RLS, Python jobs runner, an
 - **027 - Portfolio Performance Metrics**
 - **028 - Risk Rules & Metrics v1**
 - **029 - UI: Portfolio & Risk Dashboard**
+- **031 - Price Data Fallback Provider (Python Web Scraping)**
+- **032 - Symbol Normalization & Provider Mapping**
+- **033 - Local Developer Workflow & Environment**
+- **034 - CI Quality Gates (Frontend + Jobs Runner)**
+- **035 - Runbooks & Operator Documentation Pack**
+- **036 - Security Hardening Baseline**
+- **037 - Backups, Restore, and Data Retention**
+- **038 - Performance & Rate-Limit Management**
+- **039 - Legal/Non-Advisory Disclaimer & Guardrails**
 
 See also: [`features/README.md`](./features/README.md)
 
@@ -31,12 +40,12 @@ See also: [`features/README.md`](./features/README.md)
 
 These are documented but not considered delivered end-to-end yet:
 
-- **015 - Data Quality & Observability** (pipeline health, alerts, monitoring)
 - **018 - Signal Engine: Gap Up/Down Detector (Deferred)** (requires market-open cadence)
-- **022 - News Reaction Analytics (1D)**
-- **031/032 - Provider fallbacks + symbol normalization**
-- **034–039 - CI, runbooks, security hardening, backups, performance, guardrails**
-- **040/041 - Alerts and authentication (future)**
+- **002 - Self-Hosted Supabase via Cloudflare Tunnel**
+- **030 - Cloudflare Tunnel Exposure & Migration Runbook**
+- **040 - Alerts & Notifications Framework (Future)**
+- **041 - Authentication & Private Views (Future)**
+- **042 - Backtest CLI Discovery and Execution**
 
 ## Known issues / risks
 

@@ -84,6 +84,8 @@ Env vars (jobs; includes secrets):
 - `SUPABASE_SERVICE_ROLE_KEY` (secret)
 - Optional tuning: `ASX_JOBS_*`, `YAHOO_*`
 
+Note: `jobs/.env.example` is the template; `jobs/.env` should never be committed.
+
 ---
 
 ## Tests / quality gates

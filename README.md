@@ -102,6 +102,21 @@ If Supabase environment variables are missing/placeholder, the UI runs in a safe
 
 - Frontend is designed for GitHub Pages (SPA routing support is included).
   See [`frontend/README.md`](./frontend/README.md) and Feature **003** / **004**.
+
+Note: `frontend/public/404.html` contains a hard-coded redirect base path (`/ASX-Trading-Lab/`). If you deploy under a different subpath, update that file accordingly.
+
+### GitHub Pages settings (important)
+
+This repo deploys the frontend via **GitHub Actions** (not by serving the repository root).
+
+In GitHub: Settings → Pages → **Source: GitHub Actions**.
+
+If you set Pages to deploy from `main` + `/(root)`, GitHub Pages will serve the repository files (often rendering `README.md`) instead of the built SPA.
+
+### GitLab Pages note
+
+If you deploy this repo on GitLab Pages, you must publish the built frontend output (Vite `frontend/dist/`) as the Pages artifact.
+Also set `VITE_BASE_PATH` to the project subpath used by GitLab Pages (or `/` if serving from a root domain).
 - Jobs runner can be scheduled via systemd timer on Ubuntu.
   See [`deploy/README.md`](./deploy/README.md) and Feature **010**.
 

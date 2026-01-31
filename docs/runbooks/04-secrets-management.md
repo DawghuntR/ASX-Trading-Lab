@@ -46,6 +46,13 @@ Related: [Feature 004](../../features/004-github-pages-ci-cd-deployment.md)
 Never commit `.env` files to git.
 Use `.env.example` as the template.
 
+For the jobs runner:
+
+```bash
+cd jobs
+cp .env.example .env
+```
+
 Verification:
 ```bash
 git status --ignored
