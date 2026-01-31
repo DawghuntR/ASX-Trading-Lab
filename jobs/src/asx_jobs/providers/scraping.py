@@ -14,7 +14,7 @@ Finance provider as the primary source whenever possible.
 import re
 import time
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import date
 from typing import Any
 
 import requests
@@ -42,14 +42,14 @@ class ScrapingConfig:
 
 class ASXScrapingProvider(BasePriceProvider):
     """Web scraping fallback provider for ASX price data.
-    
+
     Scrapes price data from publicly accessible sources. This provider
     is designed as a fallback when Yahoo Finance is unavailable.
-    
+
     Current scraping targets:
     - MarketIndex.com.au - Australian stock market data
     - ASX.com.au - Official ASX website (limited)
-    
+
     Note: Web scraping is subject to website changes and rate limits.
     Always be respectful of the target website's terms of service.
     """
@@ -62,11 +62,13 @@ class ASXScrapingProvider(BasePriceProvider):
         """
         self.config = config or ScrapingConfig()
         self.session = requests.Session()
-        self.session.headers.update({
-            "User-Agent": self.config.user_agent,
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "en-AU,en;q=0.9",
-        })
+        self.session.headers.update(
+            {
+                "User-Agent": self.config.user_agent,
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "en-AU,en;q=0.9",
+            }
+        )
         logger.info(
             "scraping_provider_initialized",
             rate_limit_delay=self.config.rate_limit_delay,
@@ -154,7 +156,7 @@ class ASXScrapingProvider(BasePriceProvider):
         """
         url = f"https://www.marketindex.com.au/asx/{symbol.lower()}"
         soup = self._fetch_page(url)
-        
+
         if not soup:
             return None
 
@@ -213,7 +215,7 @@ class ASXScrapingProvider(BasePriceProvider):
         """
         url = f"https://www2.asx.com.au/markets/company/{symbol.upper()}"
         soup = self._fetch_page(url)
-        
+
         if not soup:
             return None
 
@@ -262,7 +264,7 @@ class ASXScrapingProvider(BasePriceProvider):
             List containing today's PriceBar, or empty list if failed.
         """
         bar = self._scrape_marketindex_quote(symbol)
-        
+
         if bar is None:
             bar = self._scrape_asx_quote(symbol)
 

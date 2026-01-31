@@ -17,10 +17,10 @@ Usage:
     provider = YahooFinanceProvider()
 """
 
-from asx_jobs.providers.base import BasePriceProvider, PriceBar
-from asx_jobs.providers.yahoo import YahooFinanceProvider
-from asx_jobs.providers.scraping import ASXScrapingProvider, ScrapingConfig
 from asx_jobs.config import YahooConfig
+from asx_jobs.providers.base import BasePriceProvider, PriceBar
+from asx_jobs.providers.scraping import ASXScrapingProvider, ScrapingConfig
+from asx_jobs.providers.yahoo import YahooFinanceProvider
 
 __all__ = [
     "BasePriceProvider",
@@ -57,7 +57,4 @@ def get_provider(
     elif provider_name in ("scraping", "scrape", "asx_scraping", "fallback"):
         return ASXScrapingProvider(config=scraping_config)
     else:
-        raise ValueError(
-            f"Unknown provider: {provider_name}. "
-            f"Valid options: 'yahoo', 'scraping'"
-        )
+        raise ValueError(f"Unknown provider: {provider_name}. Valid options: 'yahoo', 'scraping'")

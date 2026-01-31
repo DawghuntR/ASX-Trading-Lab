@@ -18,7 +18,7 @@ logger = get_logger(__name__)
 @dataclass
 class PriceMovementConfig:
     """Configuration for price movement detection."""
-    
+
     daily_change_threshold: float = 5.0
     five_day_change_threshold: float = 10.0
     volume_spike_multiplier: float = 2.0
@@ -132,9 +132,7 @@ class PriceMovementSignalJob(BaseJob):
 
         daily_change = self._calc_daily_change(latest, previous)
         if daily_change is not None:
-            signal = self._check_daily_movement(
-                instrument_id, symbol, latest, daily_change
-            )
+            signal = self._check_daily_movement(instrument_id, symbol, latest, daily_change)
             if signal:
                 self.db.insert_signal(signal)
                 signals_count += 1
@@ -142,38 +140,28 @@ class PriceMovementSignalJob(BaseJob):
         if len(prices) >= 6:
             five_day_change = self._calc_multi_day_change(prices, 5)
             if five_day_change is not None:
-                signal = self._check_momentum(
-                    instrument_id, symbol, latest, five_day_change
-                )
+                signal = self._check_momentum(instrument_id, symbol, latest, five_day_change)
                 if signal:
                     self.db.insert_signal(signal)
                     signals_count += 1
 
         if len(prices) >= self.config.volume_baseline_days:
-            volume_ratio = self._calc_volume_ratio(
-                prices, self.config.volume_baseline_days
-            )
+            volume_ratio = self._calc_volume_ratio(prices, self.config.volume_baseline_days)
             if volume_ratio is not None:
-                signal = self._check_volume_spike(
-                    instrument_id, symbol, latest, volume_ratio
-                )
+                signal = self._check_volume_spike(instrument_id, symbol, latest, volume_ratio)
                 if signal:
                     self.db.insert_signal(signal)
                     signals_count += 1
 
         return signals_count
 
-    def _calc_daily_change(
-        self, latest: dict[str, Any], previous: dict[str, Any]
-    ) -> float | None:
+    def _calc_daily_change(self, latest: dict[str, Any], previous: dict[str, Any]) -> float | None:
         """Calculate daily percentage change."""
         if previous["close"] is None or previous["close"] == 0:
             return None
         return ((latest["close"] - previous["close"]) / previous["close"]) * 100
 
-    def _calc_multi_day_change(
-        self, prices: list[dict[str, Any]], days: int
-    ) -> float | None:
+    def _calc_multi_day_change(self, prices: list[dict[str, Any]], days: int) -> float | None:
         """Calculate multi-day percentage change."""
         if len(prices) < days + 1:
             return None
@@ -182,9 +170,7 @@ class PriceMovementSignalJob(BaseJob):
             return None
         return ((prices[0]["close"] - baseline) / baseline) * 100
 
-    def _calc_volume_ratio(
-        self, prices: list[dict[str, Any]], baseline_days: int
-    ) -> float | None:
+    def _calc_volume_ratio(self, prices: list[dict[str, Any]], baseline_days: int) -> float | None:
         """Calculate volume ratio vs baseline average."""
         if len(prices) < baseline_days:
             return None
@@ -194,7 +180,7 @@ class PriceMovementSignalJob(BaseJob):
             return None
 
         baseline_volumes: list[int] = []
-        for p in prices[1:baseline_days + 1]:
+        for p in prices[1 : baseline_days + 1]:
             vol = p.get("volume")
             if vol is not None and vol > 0:
                 baseline_volumes.append(vol)
@@ -291,7 +277,10 @@ class PriceMovementSignalJob(BaseJob):
             "direction": "neutral",
             "strength": strength,
             "trigger_price": price["close"],
-            "trigger_reason": f"Volume {volume_ratio:.1f}x above {self.config.volume_baseline_days}-day average",
+            "trigger_reason": (
+                f"Volume {volume_ratio:.1f}x above "
+                f"{self.config.volume_baseline_days}-day average"
+            ),
             "metrics": {
                 "volume_ratio": round(volume_ratio, 2),
                 "volume": price.get("volume"),
@@ -299,9 +288,7 @@ class PriceMovementSignalJob(BaseJob):
             },
         }
 
-    def _calc_strength(
-        self, value: float, low_threshold: float, high_threshold: float
-    ) -> str:
+    def _calc_strength(self, value: float, low_threshold: float, high_threshold: float) -> str:
         """Calculate signal strength based on thresholds."""
         if value >= high_threshold:
             return "strong"

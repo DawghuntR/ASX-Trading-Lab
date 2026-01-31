@@ -104,9 +104,7 @@ class VolatilitySpikeSignalJob(BaseJob):
             },
         )
 
-    def _process_instrument(
-        self, instrument: dict[str, Any]
-    ) -> dict[str, Any] | None:
+    def _process_instrument(self, instrument: dict[str, Any]) -> dict[str, Any] | None:
         """Process a single instrument for volatility signals.
 
         Args:
@@ -153,8 +151,7 @@ class VolatilitySpikeSignalJob(BaseJob):
             "strength": strength,
             "trigger_price": latest["close"],
             "trigger_reason": (
-                f"Daily range {range_ratio:.1f}x above "
-                f"{self.config.atr_window}-day ATR"
+                f"Daily range {range_ratio:.1f}x above {self.config.atr_window}-day ATR"
             ),
             "metrics": {
                 "true_range": round(today_range, 4),
@@ -225,9 +222,9 @@ class VolatilitySpikeSignalJob(BaseJob):
         """Determine signal strength based on range ratio."""
         if range_ratio >= self.config.strong_spike_multiplier:
             return "strong"
-        elif range_ratio >= (
-            self.config.spike_multiplier + self.config.strong_spike_multiplier
-        ) / 2:
+        elif (
+            range_ratio >= (self.config.spike_multiplier + self.config.strong_spike_multiplier) / 2
+        ):
             return "medium"
         else:
             return "weak"

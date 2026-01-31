@@ -6,7 +6,6 @@ to simulate rule-based strategies.
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
 
 from asx_jobs.backtest.strategy import SignalType, Strategy, StrategySignal
 from asx_jobs.database import Database
@@ -265,9 +264,7 @@ class BacktestEngine:
             BacktestResult with simulation results.
         """
         if config.universe:
-            instruments = [
-                self.db.get_instrument_by_id(i) for i in config.universe
-            ]
+            instruments = [self.db.get_instrument_by_id(i) for i in config.universe]
             instruments = [i for i in instruments if i]
         else:
             instruments = self.db.get_all_active_instruments()
@@ -507,7 +504,8 @@ class BacktestEngine:
         net_proceeds = gross_proceeds - commission
 
         gross_pnl = gross_proceeds - (position.quantity * position.entry_price)
-        total_commission = (position.entry_value - position.quantity * position.entry_price) + commission
+        entry_commission = position.entry_value - position.quantity * position.entry_price
+        total_commission = entry_commission + commission
         net_pnl = gross_pnl - total_commission
 
         pnl_percent = net_pnl / position.entry_value if position.entry_value > 0 else 0
@@ -616,13 +614,16 @@ class BacktestEngine:
             std_return = statistics.stdev(daily_returns) if len(daily_returns) > 1 else 0
 
             if std_return > 0:
-                sharpe_ratio = (mean_return * 252) / (std_return * (252 ** 0.5))
+                sharpe_ratio = (mean_return * 252) / (std_return * (252**0.5))
 
             downside_returns = [r for r in daily_returns if r < 0]
             if downside_returns:
-                downside_std = statistics.stdev(downside_returns) if len(downside_returns) > 1 else 0
+                if len(downside_returns) > 1:
+                    downside_std = statistics.stdev(downside_returns)
+                else:
+                    downside_std = 0
                 if downside_std > 0:
-                    sortino_ratio = (mean_return * 252) / (downside_std * (252 ** 0.5))
+                    sortino_ratio = (mean_return * 252) / (downside_std * (252**0.5))
 
         return BacktestMetrics(
             total_return=total_return,

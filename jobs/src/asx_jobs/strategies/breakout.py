@@ -78,8 +78,7 @@ class BreakoutStrategy(Strategy):
             name="Breakout",
             version="1.0.0",
             description=(
-                f"Buy {lookback_days}-day breakout, "
-                f"exit with {trailing_stop_pct}% trailing stop"
+                f"Buy {lookback_days}-day breakout, exit with {trailing_stop_pct}% trailing stop"
             ),
             lookback_days=lookback_days,
             trailing_stop_pct=trailing_stop_pct,

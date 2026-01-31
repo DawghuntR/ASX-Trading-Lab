@@ -172,9 +172,7 @@ class ComputeReactionsJob(BaseJob):
 
         return [a for a in result.data if a["id"] not in processed_ids]
 
-    def _fetch_price_data(
-        self, instrument_ids: list[int]
-    ) -> dict[int, list[dict[str, Any]]]:
+    def _fetch_price_data(self, instrument_ids: list[int]) -> dict[int, list[dict[str, Any]]]:
         """Fetch price data for all relevant instruments."""
         start_date = (self.lookback_date - timedelta(days=10)).isoformat()
         end_date = (date.today() + timedelta(days=1)).isoformat()

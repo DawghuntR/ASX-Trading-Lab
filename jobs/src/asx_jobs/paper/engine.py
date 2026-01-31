@@ -1,7 +1,6 @@
 """Paper trading engine for managing accounts, orders, and positions."""
 
 from dataclasses import dataclass
-from datetime import datetime
 from typing import Any
 
 from asx_jobs.database import Database
@@ -205,9 +204,7 @@ class PaperTradingEngine:
         """
         return self._db.get_paper_positions(account_id)
 
-    def get_orders(
-        self, account_id: int, status: str | None = None
-    ) -> list[dict[str, Any]]:
+    def get_orders(self, account_id: int, status: str | None = None) -> list[dict[str, Any]]:
         """Get orders for an account.
 
         Args:
@@ -237,9 +234,7 @@ class PaperTradingEngine:
         position_details = []
 
         for pos in positions:
-            latest_price = self._db.get_latest_price_for_instrument(
-                pos["instrument_id"]
-            )
+            latest_price = self._db.get_latest_price_for_instrument(pos["instrument_id"])
             current_price = latest_price["close"] if latest_price else pos["avg_entry_price"]
 
             market_value = current_price * pos["quantity"]
@@ -255,7 +250,8 @@ class PaperTradingEngine:
                     "current_price": current_price,
                     "market_value": market_value,
                     "unrealized_pnl": unrealized_pnl,
-                    "unrealized_pnl_pct": unrealized_pnl / (pos["avg_entry_price"] * pos["quantity"])
+                    "unrealized_pnl_pct": unrealized_pnl
+                    / (pos["avg_entry_price"] * pos["quantity"])
                     if pos["quantity"] > 0
                     else 0,
                 }
@@ -269,8 +265,7 @@ class PaperTradingEngine:
             "positions_value": positions_value,
             "total_value": total_value,
             "initial_balance": account["initial_balance"],
-            "total_return": (total_value - account["initial_balance"])
-            / account["initial_balance"],
+            "total_return": (total_value - account["initial_balance"]) / account["initial_balance"],
             "positions": position_details,
         }
 
@@ -287,9 +282,7 @@ class PaperTradingEngine:
         updated = 0
 
         for pos in positions:
-            latest_price = self._db.get_latest_price_for_instrument(
-                pos["instrument_id"]
-            )
+            latest_price = self._db.get_latest_price_for_instrument(pos["instrument_id"])
             if latest_price:
                 self._db.upsert_paper_position(
                     account_id=account_id,

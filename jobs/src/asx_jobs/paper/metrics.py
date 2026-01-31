@@ -1,7 +1,6 @@
 """Portfolio performance metrics calculation."""
 
 from dataclasses import dataclass
-from datetime import datetime
 from typing import Any
 
 from asx_jobs.database import Database
@@ -122,9 +121,7 @@ class PortfolioAnalyzer:
             current_exposure=exposure_stats["current_exposure"],
         )
 
-    def get_equity_curve(
-        self, account_id: int, limit: int = 365
-    ) -> list[EquityPoint]:
+    def get_equity_curve(self, account_id: int, limit: int = 365) -> list[EquityPoint]:
         """Get the equity curve for an account.
 
         Args:
@@ -169,7 +166,9 @@ class PortfolioAnalyzer:
             daily_pnl = float(snap.get("daily_pnl") or 0)
             daily_return = float(snap.get("daily_return") or 0)
 
-            cumulative_return = (total_value - initial_value) / initial_value if initial_value > 0 else 0
+            cumulative_return = (
+                (total_value - initial_value) / initial_value if initial_value > 0 else 0
+            )
 
             if total_value > peak_value:
                 peak_value = total_value
@@ -193,9 +192,7 @@ class PortfolioAnalyzer:
 
         return curve
 
-    def _calculate_drawdown(
-        self, equity_curve: list[EquityPoint]
-    ) -> dict[str, Any]:
+    def _calculate_drawdown(self, equity_curve: list[EquityPoint]) -> dict[str, Any]:
         """Calculate drawdown statistics.
 
         Args:
@@ -292,7 +289,9 @@ class PortfolioAnalyzer:
 
         total_wins = sum(wins)
         total_losses = sum(losses)
-        profit_factor = total_wins / total_losses if total_losses > 0 else float("inf") if total_wins > 0 else 0
+        profit_factor = (
+            total_wins / total_losses if total_losses > 0 else float("inf") if total_wins > 0 else 0
+        )
 
         return {
             "total_trades": total_trades,
@@ -384,38 +383,38 @@ class PortfolioAnalyzer:
             Formatted string report.
         """
         lines = [
-            f"Portfolio Performance Report",
-            f"=" * 50,
+            "Portfolio Performance Report",
+            "=" * 50,
             f"Account: {metrics.account_name} (ID: {metrics.account_id})",
             f"Period: {metrics.start_date} to {metrics.end_date}",
-            f"",
-            f"Returns",
-            f"-" * 30,
+            "",
+            "Returns",
+            "-" * 30,
             f"Initial Value:    ${metrics.initial_value:>15,.2f}",
             f"Final Value:      ${metrics.final_value:>15,.2f}",
             f"Total Return:     ${metrics.total_return:>15,.2f}",
-            f"Total Return %:   {metrics.total_return_pct*100:>15.2f}%",
-            f"",
-            f"Risk Metrics",
-            f"-" * 30,
+            f"Total Return %:   {metrics.total_return_pct * 100:>15.2f}%",
+            "",
+            "Risk Metrics",
+            "-" * 30,
             f"Max Drawdown:     ${metrics.max_drawdown:>15,.2f}",
-            f"Max Drawdown %:   {metrics.max_drawdown_pct*100:>15.2f}%",
+            f"Max Drawdown %:   {metrics.max_drawdown_pct * 100:>15.2f}%",
             f"Peak Value:       ${metrics.peak_value:>15,.2f}",
-            f"",
-            f"Trade Statistics",
-            f"-" * 30,
+            "",
+            "Trade Statistics",
+            "-" * 30,
             f"Total Trades:     {metrics.total_trades:>15}",
             f"Winning Trades:   {metrics.winning_trades:>15}",
             f"Losing Trades:    {metrics.losing_trades:>15}",
-            f"Win Rate:         {metrics.win_rate*100:>15.2f}%",
+            f"Win Rate:         {metrics.win_rate * 100:>15.2f}%",
             f"Avg Win:          ${metrics.avg_win:>15,.2f}",
             f"Avg Loss:         ${metrics.avg_loss:>15,.2f}",
             f"Profit Factor:    {metrics.profit_factor:>15.2f}",
-            f"",
-            f"Exposure",
-            f"-" * 30,
-            f"Avg Exposure:     {metrics.avg_exposure*100:>15.2f}%",
-            f"Current Exposure: {metrics.current_exposure*100:>15.2f}%",
+            "",
+            "Exposure",
+            "-" * 30,
+            f"Avg Exposure:     {metrics.avg_exposure * 100:>15.2f}%",
+            f"Current Exposure: {metrics.current_exposure * 100:>15.2f}%",
             f"Trading Days:     {metrics.trading_days:>15}",
         ]
         return "\n".join(lines)

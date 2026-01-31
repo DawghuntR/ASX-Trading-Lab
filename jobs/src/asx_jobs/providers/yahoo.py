@@ -136,9 +136,7 @@ class YahooFinanceProvider(BasePriceProvider):
                     low=float(row["Low"]) if pd.notna(row["Low"]) else None,
                     close=float(row["Close"]),
                     volume=int(row["Volume"]) if pd.notna(row["Volume"]) else 0,
-                    adjusted_close=(
-                        float(row["Close"]) if pd.notna(row["Close"]) else None
-                    ),
+                    adjusted_close=(float(row["Close"]) if pd.notna(row["Close"]) else None),
                 )
             )
 
@@ -255,7 +253,9 @@ class YahooFinanceProvider(BasePriceProvider):
                             low=float(row["Low"]) if pd.notna(row.get("Low")) else None,
                             close=float(row["Close"]),
                             volume=int(row["Volume"]) if pd.notna(row.get("Volume")) else 0,
-                            adjusted_close=float(row["Close"]) if pd.notna(row.get("Close")) else None,
+                            adjusted_close=float(row["Close"])
+                            if pd.notna(row.get("Close"))
+                            else None,
                         )
                     )
                 results[asx_sym] = bars

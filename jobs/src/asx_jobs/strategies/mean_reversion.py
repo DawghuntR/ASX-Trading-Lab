@@ -108,8 +108,6 @@ class MeanReversionStrategy(Strategy):
         position: dict[str, Any] | None,
     ) -> StrategySignal | None:
         """Process a bar and generate signals."""
-        current_price = bar["close"]
-
         if position:
             return self._check_exit(instrument_id, symbol, bar, position)
         else:
@@ -150,7 +148,9 @@ class MeanReversionStrategy(Strategy):
                     return None
 
         down_days = 0
-        prices = [bar["close"]] + [h["close"] for h in history[:self._config.consecutive_down_days]]
+        prices = [bar["close"]] + [
+            h["close"] for h in history[: self._config.consecutive_down_days]
+        ]
 
         for i in range(len(prices) - 1):
             if prices[i] < prices[i + 1]:

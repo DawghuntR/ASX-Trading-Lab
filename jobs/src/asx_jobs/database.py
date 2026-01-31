@@ -62,11 +62,7 @@ class Database:
             "metadata": metadata or {},
         }
 
-        result = (
-            self._client.table("instruments")
-            .upsert(data, on_conflict="symbol")
-            .execute()
-        )
+        result = self._client.table("instruments").upsert(data, on_conflict="symbol").execute()
 
         instrument_id: int = result.data[0]["id"]
         return instrument_id
@@ -130,11 +126,7 @@ class Database:
             Instrument record or None if not found.
         """
         result = (
-            self._client.table("instruments")
-            .select("*")
-            .eq("symbol", symbol)
-            .limit(1)
-            .execute()
+            self._client.table("instruments").select("*").eq("symbol", symbol).limit(1).execute()
         )
 
         if result.data:
@@ -151,11 +143,7 @@ class Database:
             Instrument record or None if not found.
         """
         result = (
-            self._client.table("instruments")
-            .select("*")
-            .eq("id", instrument_id)
-            .limit(1)
-            .execute()
+            self._client.table("instruments").select("*").eq("id", instrument_id).limit(1).execute()
         )
 
         if result.data:
@@ -200,9 +188,7 @@ class Database:
             return str(result.data[0]["trade_date"])
         return None
 
-    def bulk_upsert_prices(
-        self, prices: list[dict[str, Any]], batch_size: int = 100
-    ) -> int:
+    def bulk_upsert_prices(self, prices: list[dict[str, Any]], batch_size: int = 100) -> int:
         """Bulk upsert daily prices.
 
         Args:
@@ -222,9 +208,7 @@ class Database:
 
         return total
 
-    def get_price_history(
-        self, instrument_id: int, days: int = 30
-    ) -> list[dict[str, Any]]:
+    def get_price_history(self, instrument_id: int, days: int = 30) -> list[dict[str, Any]]:
         """Get price history for an instrument.
 
         Args:
@@ -274,9 +258,7 @@ class Database:
         signal_id: int = result.data[0]["id"]
         return signal_id
 
-    def bulk_insert_signals(
-        self, signals: list[dict[str, Any]], batch_size: int = 100
-    ) -> int:
+    def bulk_insert_signals(self, signals: list[dict[str, Any]], batch_size: int = 100) -> int:
         """Bulk insert trading signals.
 
         Args:
@@ -372,9 +354,7 @@ class Database:
 
         is_new = len(existing.data) == 0
 
-        self._client.table("announcements").upsert(
-            data, on_conflict="content_hash"
-        ).execute()
+        self._client.table("announcements").upsert(data, on_conflict="content_hash").execute()
 
         return is_new
 
@@ -460,9 +440,7 @@ class Database:
         if error_message:
             data["error_message"] = error_message
 
-        self._client.table("backtest_runs").update(data).eq(
-            "id", backtest_run_id
-        ).execute()
+        self._client.table("backtest_runs").update(data).eq("id", backtest_run_id).execute()
 
     def insert_backtest_trade(
         self,
@@ -711,11 +689,7 @@ class Database:
             Account record or None.
         """
         result = (
-            self._client.table("paper_accounts")
-            .select("*")
-            .eq("id", account_id)
-            .limit(1)
-            .execute()
+            self._client.table("paper_accounts").select("*").eq("id", account_id).limit(1).execute()
         )
 
         if result.data:
@@ -732,11 +706,7 @@ class Database:
             Account record or None.
         """
         result = (
-            self._client.table("paper_accounts")
-            .select("*")
-            .eq("name", name)
-            .limit(1)
-            .execute()
+            self._client.table("paper_accounts").select("*").eq("name", name).limit(1).execute()
         )
 
         if result.data:
@@ -760,9 +730,7 @@ class Database:
         result = query.order("name").execute()
         return [dict(r) for r in result.data]
 
-    def update_paper_account_balance(
-        self, account_id: int, cash_balance: float
-    ) -> None:
+    def update_paper_account_balance(self, account_id: int, cash_balance: float) -> None:
         """Update paper account cash balance.
 
         Args:
@@ -816,9 +784,7 @@ class Database:
         result = self._client.table("paper_orders").insert(data).execute()
         return int(result.data[0]["id"])
 
-    def get_pending_paper_orders(
-        self, account_id: int | None = None
-    ) -> list[dict[str, Any]]:
+    def get_pending_paper_orders(self, account_id: int | None = None) -> list[dict[str, Any]]:
         """Get all pending paper orders.
 
         Args:
@@ -852,13 +818,7 @@ class Database:
             filled_price: Fill price.
             filled_quantity: Quantity filled (defaults to full order).
         """
-        order = (
-            self._client.table("paper_orders")
-            .select("*")
-            .eq("id", order_id)
-            .single()
-            .execute()
-        )
+        order = self._client.table("paper_orders").select("*").eq("id", order_id).single().execute()
 
         qty = filled_quantity or order.data["quantity"]
         status = "filled" if qty >= order.data["quantity"] else "partial"
@@ -978,9 +938,7 @@ class Database:
         result = query.order("instrument_id").execute()
         return [dict(r) for r in result.data]
 
-    def get_paper_position(
-        self, account_id: int, instrument_id: int
-    ) -> dict[str, Any] | None:
+    def get_paper_position(self, account_id: int, instrument_id: int) -> dict[str, Any] | None:
         """Get a specific paper position.
 
         Args:
@@ -1047,9 +1005,7 @@ class Database:
         )
         return int(result.data[0]["id"])
 
-    def get_portfolio_snapshots(
-        self, account_id: int, limit: int = 90
-    ) -> list[dict[str, Any]]:
+    def get_portfolio_snapshots(self, account_id: int, limit: int = 90) -> list[dict[str, Any]]:
         """Get portfolio snapshots for an account.
 
         Args:
@@ -1069,9 +1025,7 @@ class Database:
         )
         return [dict(r) for r in result.data]
 
-    def get_latest_portfolio_snapshot(
-        self, account_id: int
-    ) -> dict[str, Any] | None:
+    def get_latest_portfolio_snapshot(self, account_id: int) -> dict[str, Any] | None:
         """Get the latest portfolio snapshot.
 
         Args:
@@ -1093,9 +1047,7 @@ class Database:
             return dict(result.data[0])
         return None
 
-    def get_latest_price_for_instrument(
-        self, instrument_id: int
-    ) -> dict[str, Any] | None:
+    def get_latest_price_for_instrument(self, instrument_id: int) -> dict[str, Any] | None:
         """Get the latest price for an instrument.
 
         Args:
@@ -1127,10 +1079,7 @@ class Database:
             List of price records.
         """
         result = (
-            self._client.table("daily_prices")
-            .select("*")
-            .eq("trade_date", trade_date)
-            .execute()
+            self._client.table("daily_prices").select("*").eq("trade_date", trade_date).execute()
         )
         return [dict(r) for r in result.data]
 
@@ -1152,10 +1101,7 @@ class Database:
         Returns:
             List of reaction records.
         """
-        query = (
-            self._client.table("announcement_reactions")
-            .select("*, instruments(symbol, name)")
-        )
+        query = self._client.table("announcement_reactions").select("*, instruments(symbol, name)")
 
         if document_type:
             query = query.eq("document_type", document_type)
@@ -1261,9 +1207,7 @@ class Database:
 
         return sorted(summary, key=lambda x: x["total_count"], reverse=True)
 
-    def get_reactions_for_symbol(
-        self, instrument_id: int, limit: int = 50
-    ) -> list[dict[str, Any]]:
+    def get_reactions_for_symbol(self, instrument_id: int, limit: int = 50) -> list[dict[str, Any]]:
         """Get announcement reactions for a specific instrument.
 
         Args:

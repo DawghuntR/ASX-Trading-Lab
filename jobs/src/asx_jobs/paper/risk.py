@@ -136,7 +136,9 @@ class RiskManager:
         total_exposure = positions_value / total_value if total_value > 0 else 0
         cash_reserve_pct = cash_balance / total_value if total_value > 0 else 1.0
 
-        drawdown_info = self._calculate_drawdown(snapshots, total_value, float(account["initial_balance"]))
+        drawdown_info = self._calculate_drawdown(
+            snapshots, total_value, float(account["initial_balance"])
+        )
         losing_streak = self._calculate_losing_streak(account_id)
         position_risks = self._calculate_position_risks(positions, total_value)
 
@@ -282,7 +284,10 @@ class RiskManager:
                     severity="warning",
                     current_value=metrics.total_exposure,
                     limit_value=self._limits.max_total_exposure,
-                    message=f"Total exposure {metrics.total_exposure*100:.1f}% exceeds limit of {self._limits.max_total_exposure*100:.1f}%",
+                    message=(
+                        f"Total exposure {metrics.total_exposure * 100:.1f}% "
+                        f"exceeds limit of {self._limits.max_total_exposure * 100:.1f}%"
+                    ),
                 )
             )
 
@@ -293,7 +298,10 @@ class RiskManager:
                     severity="warning",
                     current_value=metrics.cash_reserve_pct,
                     limit_value=self._limits.min_cash_reserve,
-                    message=f"Cash reserve {metrics.cash_reserve_pct*100:.1f}% below minimum of {self._limits.min_cash_reserve*100:.1f}%",
+                    message=(
+                        f"Cash reserve {metrics.cash_reserve_pct * 100:.1f}% "
+                        f"below minimum of {self._limits.min_cash_reserve * 100:.1f}%"
+                    ),
                 )
             )
 
@@ -304,7 +312,10 @@ class RiskManager:
                     severity="critical",
                     current_value=metrics.current_drawdown_pct,
                     limit_value=self._limits.max_drawdown_pct,
-                    message=f"Drawdown {metrics.current_drawdown_pct*100:.1f}% exceeds limit of {self._limits.max_drawdown_pct*100:.1f}%",
+                    message=(
+                        f"Drawdown {metrics.current_drawdown_pct * 100:.1f}% "
+                        f"exceeds limit of {self._limits.max_drawdown_pct * 100:.1f}%"
+                    ),
                 )
             )
 
@@ -315,7 +326,10 @@ class RiskManager:
                     severity="warning",
                     current_value=float(metrics.losing_streak),
                     limit_value=float(self._limits.max_losing_streak),
-                    message=f"Losing streak of {metrics.losing_streak} trades meets/exceeds limit of {self._limits.max_losing_streak}",
+                    message=(
+                        f"Losing streak of {metrics.losing_streak} trades "
+                        f"meets/exceeds limit of {self._limits.max_losing_streak}"
+                    ),
                 )
             )
 
@@ -327,7 +341,11 @@ class RiskManager:
                         severity="warning",
                         current_value=pos_risk.concentration_pct,
                         limit_value=self._limits.max_position_concentration,
-                        message=f"Position {pos_risk.symbol} concentration {pos_risk.concentration_pct*100:.1f}% exceeds limit of {self._limits.max_position_concentration*100:.1f}%",
+                        message=(
+                            f"Position {pos_risk.symbol} concentration "
+                            f"{pos_risk.concentration_pct * 100:.1f}% exceeds limit of "
+                            f"{self._limits.max_position_concentration * 100:.1f}%"
+                        ),
                     )
                 )
 
@@ -358,13 +376,14 @@ class RiskManager:
         positions = self._db.get_paper_positions(account_id)
         cash_balance = float(account["cash_balance"])
         positions_value = self._calculate_positions_value(positions)
-        total_value = cash_balance + positions_value
 
         order_value = quantity * estimated_price
         warnings = []
 
         if order_value > cash_balance:
-            return False, [f"Insufficient cash: need ${order_value:,.2f}, have ${cash_balance:,.2f}"]
+            return False, [
+                f"Insufficient cash: need ${order_value:,.2f}, have ${cash_balance:,.2f}"
+            ]
 
         new_cash = cash_balance - order_value
         new_positions_value = positions_value + order_value
@@ -372,14 +391,18 @@ class RiskManager:
 
         new_exposure = new_positions_value / new_total if new_total > 0 else 0
         if new_exposure > self._limits.max_total_exposure:
+            max_exp = self._limits.max_total_exposure * 100
             warnings.append(
-                f"Order would increase exposure to {new_exposure*100:.1f}% (limit: {self._limits.max_total_exposure*100:.1f}%)"
+                f"Order would increase exposure to {new_exposure * 100:.1f}% "
+                f"(limit: {max_exp:.1f}%)"
             )
 
         new_cash_reserve = new_cash / new_total if new_total > 0 else 0
         if new_cash_reserve < self._limits.min_cash_reserve:
+            min_res = self._limits.min_cash_reserve * 100
             warnings.append(
-                f"Order would reduce cash reserve to {new_cash_reserve*100:.1f}% (minimum: {self._limits.min_cash_reserve*100:.1f}%)"
+                f"Order would reduce cash reserve to {new_cash_reserve * 100:.1f}% "
+                f"(minimum: {min_res:.1f}%)"
             )
 
         existing_position_value = 0.0
@@ -393,8 +416,10 @@ class RiskManager:
         new_position_value = existing_position_value + order_value
         new_concentration = new_position_value / new_total if new_total > 0 else 0
         if new_concentration > self._limits.max_position_concentration:
+            max_conc = self._limits.max_position_concentration * 100
             warnings.append(
-                f"Order would increase {symbol} concentration to {new_concentration*100:.1f}% (limit: {self._limits.max_position_concentration*100:.1f}%)"
+                f"Order would increase {symbol} concentration to "
+                f"{new_concentration * 100:.1f}% (limit: {max_conc:.1f}%)"
             )
 
         return True, warnings
@@ -411,44 +436,64 @@ class RiskManager:
         status = "COMPLIANT" if metrics.is_compliant else "VIOLATIONS DETECTED"
 
         lines = [
-            f"Risk Report",
-            f"=" * 50,
+            "Risk Report",
+            "=" * 50,
             f"Account: {metrics.account_name} (ID: {metrics.account_id})",
             f"Status: {status}",
-            f"",
-            f"Portfolio Summary",
-            f"-" * 30,
+            "",
+            "Portfolio Summary",
+            "-" * 30,
             f"Total Value:      ${metrics.total_value:>15,.2f}",
             f"Cash Balance:     ${metrics.cash_balance:>15,.2f}",
             f"Positions Value:  ${metrics.positions_value:>15,.2f}",
-            f"",
-            f"Risk Metrics",
-            f"-" * 30,
-            f"Total Exposure:   {metrics.total_exposure*100:>15.1f}% (limit: {self._limits.max_total_exposure*100:.0f}%)",
-            f"Cash Reserve:     {metrics.cash_reserve_pct*100:>15.1f}% (min: {self._limits.min_cash_reserve*100:.0f}%)",
-            f"Current Drawdown: {metrics.current_drawdown_pct*100:>15.1f}% (limit: {self._limits.max_drawdown_pct*100:.0f}%)",
+            "",
+            "Risk Metrics",
+            "-" * 30,
+            (
+                f"Total Exposure:   {metrics.total_exposure * 100:>15.1f}% "
+                f"(limit: {self._limits.max_total_exposure * 100:.0f}%)"
+            ),
+            (
+                f"Cash Reserve:     {metrics.cash_reserve_pct * 100:>15.1f}% "
+                f"(min: {self._limits.min_cash_reserve * 100:.0f}%)"
+            ),
+            (
+                f"Current Drawdown: {metrics.current_drawdown_pct * 100:>15.1f}% "
+                f"(limit: {self._limits.max_drawdown_pct * 100:.0f}%)"
+            ),
             f"Peak Value:       ${metrics.peak_value:>15,.2f}",
-            f"Losing Streak:    {metrics.losing_streak:>15} (limit: {self._limits.max_losing_streak})",
+            (
+                f"Losing Streak:    {metrics.losing_streak:>15} "
+                f"(limit: {self._limits.max_losing_streak})"
+            ),
         ]
 
         if metrics.position_risks:
-            lines.extend([
-                f"",
-                f"Position Concentration",
-                f"-" * 30,
-            ])
+            lines.extend(
+                [
+                    "",
+                    "Position Concentration",
+                    "-" * 30,
+                ]
+            )
             for pos in metrics.position_risks[:10]:
-                flag = "*" if pos.concentration_pct > self._limits.max_position_concentration else " "
+                flag = (
+                    "*" if pos.concentration_pct > self._limits.max_position_concentration else " "
+                )
+                pnl_pct = pos.unrealized_pnl_pct * 100
                 lines.append(
-                    f"{flag}{pos.symbol:<7} {pos.concentration_pct*100:>6.1f}%  ${pos.market_value:>12,.2f}  P&L: {pos.unrealized_pnl_pct*100:>+6.1f}%"
+                    f"{flag}{pos.symbol:<7} {pos.concentration_pct * 100:>6.1f}%  "
+                    f"${pos.market_value:>12,.2f}  P&L: {pnl_pct:>+6.1f}%"
                 )
 
         if metrics.violations:
-            lines.extend([
-                f"",
-                f"Violations ({len(metrics.violations)})",
-                f"-" * 30,
-            ])
+            lines.extend(
+                [
+                    "",
+                    f"Violations ({len(metrics.violations)})",
+                    "-" * 30,
+                ]
+            )
             for v in metrics.violations:
                 severity_marker = "!!" if v.severity == "critical" else "!"
                 lines.append(f"{severity_marker} [{v.rule}] {v.message}")

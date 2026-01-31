@@ -84,9 +84,7 @@ class IngestPricesJob(BaseJob):
             metadata={"instruments_count": len(instruments)},
         )
 
-    def _process_batch(
-        self, instruments: list[dict[str, Any]]
-    ) -> dict[str, Any]:
+    def _process_batch(self, instruments: list[dict[str, Any]]) -> dict[str, Any]:
         """Process a batch of instruments.
 
         Args:

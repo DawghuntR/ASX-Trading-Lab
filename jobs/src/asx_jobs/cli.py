@@ -28,7 +28,7 @@ Examples:
   asx-jobs signals                Generate signals only
   asx-jobs announcements          Ingest ASX announcements only
   asx-jobs reactions              Compute 1D reaction metrics for announcements
-  
+
 Paper Trading:
   asx-jobs paper account create "My Account" --balance 100000
   asx-jobs paper account list
@@ -70,7 +70,9 @@ Paper Trading:
     subparsers.add_parser("announcements", help="Ingest ASX announcements")
 
     # Reactions command
-    reactions_parser = subparsers.add_parser("reactions", help="Compute announcement reaction metrics")
+    reactions_parser = subparsers.add_parser(
+        "reactions", help="Compute announcement reaction metrics"
+    )
     reactions_parser.add_argument(
         "--lookback",
         type=int,
@@ -88,9 +90,7 @@ Paper Trading:
 
     account_create = account_subparsers.add_parser("create", help="Create account")
     account_create.add_argument("name", help="Account name")
-    account_create.add_argument(
-        "--balance", type=float, default=100000.0, help="Initial balance"
-    )
+    account_create.add_argument("--balance", type=float, default=100000.0, help="Initial balance")
 
     account_subparsers.add_parser("list", help="List accounts")
 
@@ -135,7 +135,9 @@ Paper Trading:
     snapshot_parser.add_argument("--date", help="Snapshot date (YYYY-MM-DD)")
 
     # Paper metrics command
-    metrics_parser = paper_subparsers.add_parser("metrics", help="Show portfolio performance metrics")
+    metrics_parser = paper_subparsers.add_parser(
+        "metrics", help="Show portfolio performance metrics"
+    )
     metrics_parser.add_argument("--account", type=int, required=True, help="Account ID")
     metrics_parser.add_argument("--json", action="store_true", help="Output as JSON")
 
@@ -300,16 +302,18 @@ def handle_account_command(args, engine: PaperTradingEngine) -> int:
         print(f"Positions Value:  ${portfolio['positions_value']:>15,.2f}")
         print(f"Total Value:      ${portfolio['total_value']:>15,.2f}")
         print(f"Initial Balance:  ${portfolio['initial_balance']:>15,.2f}")
-        print(f"Total Return:     {portfolio['total_return']*100:>15.2f}%")
+        print(f"Total Return:     {portfolio['total_return'] * 100:>15.2f}%")
 
         if portfolio["positions"]:
-            print(f"\n{'Symbol':<8} {'Qty':>8} {'Avg Price':>12} {'Current':>12} {'P&L':>12} {'P&L %':>8}")
+            header = f"\n{'Symbol':<8} {'Qty':>8} {'Avg Price':>12}"
+            header += f" {'Current':>12} {'P&L':>12} {'P&L %':>8}"
+            print(header)
             print("-" * 65)
             for pos in portfolio["positions"]:
                 print(
                     f"{pos['symbol'] or 'N/A':<8} {pos['quantity']:>8} "
                     f"${pos['avg_entry_price']:>10,.2f} ${pos['current_price']:>10,.2f} "
-                    f"${pos['unrealized_pnl']:>10,.2f} {pos['unrealized_pnl_pct']*100:>7.2f}%"
+                    f"${pos['unrealized_pnl']:>10,.2f} {pos['unrealized_pnl_pct'] * 100:>7.2f}%"
                 )
         return 0
 
@@ -331,7 +335,9 @@ def handle_order_command(args, engine: PaperTradingEngine) -> int:
         )
 
         if result.success:
-            print(f"Order submitted: {args.order_command.upper()} {args.quantity} {args.symbol.upper()}")
+            msg = f"Order submitted: {args.order_command.upper()}"
+            msg += f" {args.quantity} {args.symbol.upper()}"
+            print(msg)
             print(f"Order ID: {result.order_id}")
             if args.limit:
                 print(f"Limit Price: ${args.limit:,.2f}")
@@ -347,11 +353,15 @@ def handle_order_command(args, engine: PaperTradingEngine) -> int:
             print("No orders found.")
             return 0
 
-        print(f"{'ID':<6} {'Symbol':<8} {'Side':<6} {'Qty':>8} {'Type':<8} {'Status':<10} {'Filled':>10}")
+        header = f"{'ID':<6} {'Symbol':<8} {'Side':<6} {'Qty':>8}"
+        header += f" {'Type':<8} {'Status':<10} {'Filled':>10}"
+        print(header)
         print("-" * 70)
         for order in orders:
             symbol = order["instruments"]["symbol"] if order.get("instruments") else "N/A"
-            filled_price = f"${order['filled_avg_price']:.2f}" if order.get("filled_avg_price") else "-"
+            filled_price = (
+                f"${order['filled_avg_price']:.2f}" if order.get("filled_avg_price") else "-"
+            )
             print(
                 f"{order['id']:<6} {symbol:<8} {order['order_side']:<6} "
                 f"{order['quantity']:>8} {order['order_type']:<8} "

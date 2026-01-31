@@ -21,7 +21,7 @@ class PriceBar:
 
 class BasePriceProvider(ABC):
     """Abstract base class for price data providers.
-    
+
     All price providers must implement this interface to ensure
     consistent behavior across Yahoo Finance, web scraping, and
     any future data sources.

@@ -51,3 +51,4 @@ This directory contains EPIC-level feature documentation. Each feature is tracke
 - 039 - Legal/Non-Advisory Disclaimer & Guardrails
 - 040 - Alerts & Notifications Framework (Future)
 - 041 - Authentication & Private Views (Future)
+- 042 - Backtest CLI Discovery and Execution

@@ -130,9 +130,7 @@ class JobRunTracker:
             List of job run records.
         """
         try:
-            start_date = (
-                datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-            )
+            start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
             start_date = start_date.replace(
                 day=start_date.day - days if start_date.day > days else 1
             )
@@ -201,9 +199,7 @@ class DataQualityMonitor:
         }
 
         try:
-            response = (
-                self.db.client.table("data_quality_checks").insert(data).execute()
-            )
+            response = self.db.client.table("data_quality_checks").insert(data).execute()
             issue_id = int(response.data[0]["id"])
             logger.info(
                 "data_quality_issue_recorded",
@@ -234,7 +230,7 @@ class DataQualityMonitor:
             result = (
                 self.db.client.table("v_stale_data_check")
                 .select("symbol, days_since_update, staleness_status")
-                .or_(f"staleness_status.eq.stale,staleness_status.eq.never")
+                .or_("staleness_status.eq.stale,staleness_status.eq.never")
                 .execute()
             )
 
@@ -382,9 +378,7 @@ class DataQualityMonitor:
         results["checks"]["missing_snapshot"] = self.check_missing_today_snapshot()
         results["checks"]["price_quality"] = self.check_price_quality()
 
-        total_issues = sum(
-            check.get("count", 0) for check in results["checks"].values()
-        )
+        total_issues = sum(check.get("count", 0) for check in results["checks"].values())
         results["total_issues"] = total_issues
 
         logger.info(

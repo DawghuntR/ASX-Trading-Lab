@@ -67,10 +67,12 @@ class IngestAnnouncementsJob(BaseJob):
         self.db = db
         self.config = config or IngestAnnouncementsConfig()
         self._session = requests.Session()
-        self._session.headers.update({
-            "User-Agent": USER_AGENT,
-            "Accept": "application/json",
-        })
+        self._session.headers.update(
+            {
+                "User-Agent": USER_AGENT,
+                "Accept": "application/json",
+            }
+        )
 
     @property
     def name(self) -> str:
@@ -93,7 +95,7 @@ class IngestAnnouncementsJob(BaseJob):
         try:
             instruments = self._get_instruments_to_fetch()
             total_instruments = len(instruments)
-            
+
             logger.info(
                 "fetching_announcements_for_instruments",
                 total=total_instruments,
@@ -101,11 +103,11 @@ class IngestAnnouncementsJob(BaseJob):
 
             for i, instrument in enumerate(instruments):
                 symbol = instrument["symbol"]
-                
+
                 try:
                     announcements = self._fetch_announcements_for_symbol(symbol)
                     symbols_processed += 1
-                    
+
                     for ann in announcements:
                         try:
                             is_new = self._process_announcement(ann, instrument)
@@ -120,7 +122,7 @@ class IngestAnnouncementsJob(BaseJob):
                                 headline=ann.headline[:50] if ann.headline else "N/A",
                                 error=str(e),
                             )
-                    
+
                     if (i + 1) % 10 == 0:
                         logger.info(
                             "progress",
@@ -128,10 +130,10 @@ class IngestAnnouncementsJob(BaseJob):
                             total=total_instruments,
                             new_announcements=announcements_new,
                         )
-                    
+
                     if i < total_instruments - 1:
                         time.sleep(self.config.request_delay)
-                        
+
                 except Exception as e:
                     symbols_failed += 1
                     errors.append(f"{symbol}: fetch failed - {str(e)}")
@@ -175,7 +177,7 @@ class IngestAnnouncementsJob(BaseJob):
 
     def _get_instruments_to_fetch(self) -> list[dict[str, Any]]:
         """Get list of instruments to fetch announcements for.
-        
+
         Returns:
             List of instrument dictionaries with id and symbol.
         """
@@ -186,8 +188,10 @@ class IngestAnnouncementsJob(BaseJob):
                 if inst:
                     instruments.append(inst)
             return instruments
-        
-        response = self.db.client.table("instruments").select("id, symbol").eq("is_active", True).execute()
+
+        response = (
+            self.db.client.table("instruments").select("id, symbol").eq("is_active", True).execute()
+        )
         return response.data or []
 
     def _fetch_announcements_for_symbol(self, symbol: str) -> list[AnnouncementRecord]:
@@ -200,24 +204,24 @@ class IngestAnnouncementsJob(BaseJob):
             List of announcement records.
         """
         url = f"{ASX_API_BASE_URL}/{symbol}/announcements"
-        
+
         response = self._session.get(url, timeout=self.config.timeout)
-        
+
         if response.status_code == 404:
             logger.debug("symbol_not_found_in_api", symbol=symbol)
             return []
-            
+
         response.raise_for_status()
-        
+
         data = response.json()
         items = data.get("data", {}).get("items", [])
-        
+
         announcements = []
         for item in items:
             ann = self._parse_api_item(symbol, item)
             if ann:
                 announcements.append(ann)
-        
+
         return announcements
 
     def _parse_api_item(self, symbol: str, item: dict[str, Any]) -> AnnouncementRecord | None:
@@ -234,26 +238,26 @@ class IngestAnnouncementsJob(BaseJob):
             date_str = item.get("date", "")
             if not date_str:
                 return None
-            
+
             announced_at = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-            
+
             headline = item.get("headline", "")
             if not headline:
                 return None
-            
+
             document_key = item.get("documentKey", "")
             url = None
             if document_key:
                 url = f"https://www.asx.com.au/asxpdf/{document_key}.pdf"
-            
+
             is_price_sensitive = item.get("isPriceSensitive", False)
             sensitivity = "price_sensitive" if is_price_sensitive else "not_price_sensitive"
-            
+
             document_type = item.get("announcementType")
-            
+
             file_size = item.get("fileSize", "")
             pages = self._estimate_pages_from_size(file_size)
-            
+
             return AnnouncementRecord(
                 symbol=symbol,
                 announced_at=announced_at,
@@ -264,23 +268,23 @@ class IngestAnnouncementsJob(BaseJob):
                 pages=pages,
                 asx_announcement_id=document_key,
             )
-            
+
         except Exception as e:
             logger.debug("item_parse_failed", symbol=symbol, error=str(e))
             return None
 
     def _estimate_pages_from_size(self, file_size: str) -> int | None:
         """Estimate page count from file size string.
-        
+
         Args:
             file_size: Size string like "161KB" or "2MB".
-            
+
         Returns:
             Estimated page count or None.
         """
         if not file_size:
             return None
-            
+
         try:
             size_str = file_size.upper().strip()
             if "KB" in size_str:
@@ -291,7 +295,7 @@ class IngestAnnouncementsJob(BaseJob):
                 return max(1, int(mb * 20))
         except (ValueError, TypeError):
             pass
-        
+
         return None
 
     def _process_announcement(self, ann: AnnouncementRecord, instrument: dict[str, Any]) -> bool:
