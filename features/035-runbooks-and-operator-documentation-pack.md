@@ -1,7 +1,7 @@
 ---
 id: 035
 name: Runbooks & Operator Documentation Pack
-status: Planned
+status: Completed
 ---
 
 # 035 - Runbooks & Operator Documentation Pack

@@ -1,7 +1,7 @@
 ---
 id: 039
 name: Legal/Non-Advisory Disclaimer & Guardrails
-status: Planned
+status: Completed
 ---
 
 # 039 - Legal/Non-Advisory Disclaimer & Guardrails

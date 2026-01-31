@@ -1,7 +1,7 @@
 ---
 id: 036
 name: Security Hardening Baseline
-status: Planned
+status: Completed
 ---
 
 # 036 - Security Hardening Baseline

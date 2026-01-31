@@ -8,6 +8,7 @@ import BacktestDetailPage from "./pages/BacktestDetailPage";
 import PortfolioPage from "./pages/PortfolioPage";
 import ReactionsPage from "./pages/ReactionsPage";
 import HealthPage from "./pages/HealthPage";
+import DisclaimerPage from "./pages/DisclaimerPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
 function App() {
@@ -47,6 +48,10 @@ function App() {
                 <Route
                     path="health"
                     element={<HealthPage />}
+                />
+                <Route
+                    path="disclaimer"
+                    element={<DisclaimerPage />}
                 />
                 <Route
                     path="*"
