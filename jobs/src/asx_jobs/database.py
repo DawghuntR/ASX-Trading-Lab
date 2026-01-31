@@ -628,6 +628,8 @@ class Database:
     ) -> dict[int, list[dict[str, Any]]]:
         """Get price history for all instruments in a date range.
 
+        Uses pagination to handle Supabase's default 1000-row limit.
+
         Args:
             start_date: Start date (YYYY-MM-DD).
             end_date: End date (YYYY-MM-DD).
@@ -636,25 +638,38 @@ class Database:
         Returns:
             Dictionary mapping instrument_id to list of price records.
         """
-        query = (
-            self._client.table("daily_prices")
-            .select("*")
-            .gte("trade_date", start_date)
-            .lte("trade_date", end_date)
-            .order("trade_date", desc=False)
-        )
-
-        if instrument_ids:
-            query = query.in_("instrument_id", instrument_ids)
-
-        result = query.execute()
-
         prices_by_instrument: dict[int, list[dict[str, Any]]] = {}
-        for row in result.data:
-            inst_id = row["instrument_id"]
-            if inst_id not in prices_by_instrument:
-                prices_by_instrument[inst_id] = []
-            prices_by_instrument[inst_id].append(dict(row))
+        page_size = 1000
+        offset = 0
+
+        while True:
+            query = (
+                self._client.table("daily_prices")
+                .select("*")
+                .gte("trade_date", start_date)
+                .lte("trade_date", end_date)
+                .order("trade_date", desc=False)
+                .range(offset, offset + page_size - 1)
+            )
+
+            if instrument_ids:
+                query = query.in_("instrument_id", instrument_ids)
+
+            result = query.execute()
+
+            if not result.data:
+                break
+
+            for row in result.data:
+                inst_id = row["instrument_id"]
+                if inst_id not in prices_by_instrument:
+                    prices_by_instrument[inst_id] = []
+                prices_by_instrument[inst_id].append(dict(row))
+
+            if len(result.data) < page_size:
+                break
+
+            offset += page_size
 
         return prices_by_instrument
 

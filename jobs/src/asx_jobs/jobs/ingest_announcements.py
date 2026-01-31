@@ -1,19 +1,16 @@
 """ASX Announcements Ingestion Job.
 
-Implements Feature 021 - ASX Announcements Ingestion (HTML Scraper).
-Scrapes ASX announcements pages and stores them in Supabase.
+Implements Feature 021 - ASX Announcements Ingestion.
+Fetches announcements from the ASX API and stores them in Supabase.
 """
 
 import hashlib
-import re
 import time
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
-from urllib.parse import urljoin
 
 import requests
-from bs4 import BeautifulSoup
 
 from asx_jobs.database import Database
 from asx_jobs.jobs.base import BaseJob, JobResult
@@ -21,8 +18,7 @@ from asx_jobs.logging import get_logger
 
 logger = get_logger(__name__)
 
-ASX_ANNOUNCEMENTS_URL = "https://www.asx.com.au/asx/v2/statistics/announcements.do"
-ASX_BASE_URL = "https://www.asx.com.au"
+ASX_API_BASE_URL = "https://asx.api.markitdigital.com/asx-research/1.0/companies"
 
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -48,14 +44,14 @@ class AnnouncementRecord:
 class IngestAnnouncementsConfig:
     """Configuration for announcements ingestion."""
 
-    max_pages: int = 5
-    request_delay: float = 1.0
+    request_delay: float = 0.5
     timeout: int = 30
     symbols_filter: list[str] | None = None
+    batch_size: int = 50
 
 
 class IngestAnnouncementsJob(BaseJob):
-    """Ingest ASX announcements from the ASX website."""
+    """Ingest ASX announcements from the ASX API."""
 
     def __init__(
         self,
@@ -73,8 +69,7 @@ class IngestAnnouncementsJob(BaseJob):
         self._session = requests.Session()
         self._session.headers.update({
             "User-Agent": USER_AGENT,
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.9",
+            "Accept": "application/json",
         })
 
     @property
@@ -86,340 +81,229 @@ class IngestAnnouncementsJob(BaseJob):
         started_at = datetime.now()
         announcements_processed = 0
         announcements_new = 0
-        failed = 0
+        symbols_processed = 0
+        symbols_failed = 0
         errors: list[str] = []
 
         logger.info(
             "announcements_job_started",
             job=self.name,
-            max_pages=self.config.max_pages,
         )
 
         try:
-            all_announcements = self._fetch_announcements()
+            instruments = self._get_instruments_to_fetch()
+            total_instruments = len(instruments)
+            
             logger.info(
-                "announcements_fetched",
-                total=len(all_announcements),
+                "fetching_announcements_for_instruments",
+                total=total_instruments,
             )
 
-            for ann in all_announcements:
+            for i, instrument in enumerate(instruments):
+                symbol = instrument["symbol"]
+                
                 try:
-                    is_new = self._process_announcement(ann)
-                    announcements_processed += 1
-                    if is_new:
-                        announcements_new += 1
+                    announcements = self._fetch_announcements_for_symbol(symbol)
+                    symbols_processed += 1
+                    
+                    for ann in announcements:
+                        try:
+                            is_new = self._process_announcement(ann, instrument)
+                            announcements_processed += 1
+                            if is_new:
+                                announcements_new += 1
+                        except Exception as e:
+                            errors.append(f"{symbol}: {str(e)}")
+                            logger.warning(
+                                "announcement_processing_failed",
+                                symbol=symbol,
+                                headline=ann.headline[:50] if ann.headline else "N/A",
+                                error=str(e),
+                            )
+                    
+                    if (i + 1) % 10 == 0:
+                        logger.info(
+                            "progress",
+                            symbols_done=i + 1,
+                            total=total_instruments,
+                            new_announcements=announcements_new,
+                        )
+                    
+                    if i < total_instruments - 1:
+                        time.sleep(self.config.request_delay)
+                        
                 except Exception as e:
-                    failed += 1
-                    errors.append(f"{ann.symbol}: {str(e)}")
+                    symbols_failed += 1
+                    errors.append(f"{symbol}: fetch failed - {str(e)}")
                     logger.warning(
-                        "announcement_processing_failed",
-                        symbol=ann.symbol,
-                        headline=ann.headline[:50],
+                        "symbol_fetch_failed",
+                        symbol=symbol,
                         error=str(e),
                     )
 
         except Exception as e:
-            logger.error("announcements_fetch_failed", error=str(e))
-            errors.append(f"Fetch failed: {str(e)}")
+            logger.error("announcements_job_failed", error=str(e))
+            errors.append(f"Job failed: {str(e)}")
 
         completed_at = datetime.now()
 
         logger.info(
             "announcements_job_completed",
             job=self.name,
-            processed=announcements_processed,
+            symbols_processed=symbols_processed,
+            symbols_failed=symbols_failed,
+            announcements_processed=announcements_processed,
             new=announcements_new,
-            failed=failed,
             duration_seconds=(completed_at - started_at).total_seconds(),
         )
 
         return JobResult(
             job_name=self.name,
-            success=failed == 0 or announcements_new > 0,
+            success=symbols_failed < symbols_processed,
             started_at=started_at,
             completed_at=completed_at,
             records_processed=announcements_new,
-            records_failed=failed,
+            records_failed=symbols_failed,
             error_message="; ".join(errors[:10]) if errors else None,
             metadata={
-                "total_fetched": announcements_processed,
+                "symbols_processed": symbols_processed,
+                "symbols_failed": symbols_failed,
+                "total_announcements_fetched": announcements_processed,
                 "new_announcements": announcements_new,
             },
         )
 
-    def _fetch_announcements(self) -> list[AnnouncementRecord]:
-        """Fetch announcements from ASX website.
-
+    def _get_instruments_to_fetch(self) -> list[dict[str, Any]]:
+        """Get list of instruments to fetch announcements for.
+        
         Returns:
-            List of parsed announcement records.
+            List of instrument dictionaries with id and symbol.
         """
-        all_announcements: list[AnnouncementRecord] = []
+        if self.config.symbols_filter:
+            instruments = []
+            for symbol in self.config.symbols_filter:
+                inst = self.db.get_instrument_by_symbol(symbol)
+                if inst:
+                    instruments.append(inst)
+            return instruments
+        
+        response = self.db.client.table("instruments").select("id, symbol").eq("is_active", True).execute()
+        return response.data or []
 
-        for page in range(1, self.config.max_pages + 1):
-            logger.debug("fetching_page", page=page)
-
-            try:
-                announcements = self._fetch_page(page)
-                all_announcements.extend(announcements)
-
-                if len(announcements) == 0:
-                    break
-
-                if page < self.config.max_pages:
-                    time.sleep(self.config.request_delay)
-
-            except Exception as e:
-                logger.warning("page_fetch_failed", page=page, error=str(e))
-                break
-
-        return all_announcements
-
-    def _fetch_page(self, page: int) -> list[AnnouncementRecord]:
-        """Fetch a single page of announcements.
+    def _fetch_announcements_for_symbol(self, symbol: str) -> list[AnnouncementRecord]:
+        """Fetch announcements for a single symbol from the ASX API.
 
         Args:
-            page: Page number (1-indexed).
+            symbol: ASX stock symbol.
 
         Returns:
-            List of announcement records from this page.
+            List of announcement records.
         """
-        params = {
-            "page": page,
-            "by": "asxCode",
-            "asxCode": "",
-            "timeframe": "D",
-            "dateReleased": "",
-        }
-
-        response = self._session.get(
-            ASX_ANNOUNCEMENTS_URL,
-            params=params,
-            timeout=self.config.timeout,
-        )
+        url = f"{ASX_API_BASE_URL}/{symbol}/announcements"
+        
+        response = self._session.get(url, timeout=self.config.timeout)
+        
+        if response.status_code == 404:
+            logger.debug("symbol_not_found_in_api", symbol=symbol)
+            return []
+            
         response.raise_for_status()
-
-        return self._parse_announcements_page(response.text)
-
-    def _parse_announcements_page(self, html: str) -> list[AnnouncementRecord]:
-        """Parse announcements from HTML page.
-
-        Args:
-            html: Raw HTML content.
-
-        Returns:
-            List of parsed announcement records.
-        """
-        soup = BeautifulSoup(html, "html.parser")
-        announcements: list[AnnouncementRecord] = []
-
-        table = soup.find("table", {"class": "announcements"})
-        if not table:
-            table = soup.find("table")
-
-        if not table:
-            return announcements
-
-        rows = table.find_all("tr")
-
-        for row in rows[1:]:
-            try:
-                ann = self._parse_row(row)
-                if ann:
-                    if self.config.symbols_filter is None or ann.symbol in self.config.symbols_filter:
-                        announcements.append(ann)
-            except Exception as e:
-                logger.debug("row_parse_failed", error=str(e))
-                continue
-
+        
+        data = response.json()
+        items = data.get("data", {}).get("items", [])
+        
+        announcements = []
+        for item in items:
+            ann = self._parse_api_item(symbol, item)
+            if ann:
+                announcements.append(ann)
+        
         return announcements
 
-    def _parse_row(self, row: Any) -> AnnouncementRecord | None:
-        """Parse a single table row into an announcement record.
+    def _parse_api_item(self, symbol: str, item: dict[str, Any]) -> AnnouncementRecord | None:
+        """Parse an API response item into an AnnouncementRecord.
 
         Args:
-            row: BeautifulSoup row element.
+            symbol: ASX stock symbol.
+            item: API response item dictionary.
 
         Returns:
             AnnouncementRecord or None if parsing fails.
         """
-        cells = row.find_all("td")
-        if len(cells) < 4:
-            return None
-
-        symbol_cell = cells[0]
-        symbol_link = symbol_cell.find("a")
-        symbol = symbol_link.text.strip() if symbol_link else symbol_cell.text.strip()
-        symbol = symbol.upper()
-
-        if not symbol or len(symbol) > 5:
-            return None
-
-        date_cell = cells[1] if len(cells) > 1 else None
-        time_cell = cells[2] if len(cells) > 2 else None
-        headline_cell = cells[3] if len(cells) > 3 else None
-        pages_cell = cells[4] if len(cells) > 4 else None
-
-        date_str = date_cell.text.strip() if date_cell else ""
-        time_str = time_cell.text.strip() if time_cell else "00:00"
-
         try:
-            announced_at = self._parse_datetime(date_str, time_str)
-        except ValueError:
+            date_str = item.get("date", "")
+            if not date_str:
+                return None
+            
+            announced_at = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+            
+            headline = item.get("headline", "")
+            if not headline:
+                return None
+            
+            document_key = item.get("documentKey", "")
+            url = None
+            if document_key:
+                url = f"https://www.asx.com.au/asxpdf/{document_key}.pdf"
+            
+            is_price_sensitive = item.get("isPriceSensitive", False)
+            sensitivity = "price_sensitive" if is_price_sensitive else "not_price_sensitive"
+            
+            document_type = item.get("announcementType")
+            
+            file_size = item.get("fileSize", "")
+            pages = self._estimate_pages_from_size(file_size)
+            
+            return AnnouncementRecord(
+                symbol=symbol,
+                announced_at=announced_at,
+                headline=headline,
+                url=url,
+                document_type=document_type,
+                sensitivity=sensitivity,
+                pages=pages,
+                asx_announcement_id=document_key,
+            )
+            
+        except Exception as e:
+            logger.debug("item_parse_failed", symbol=symbol, error=str(e))
             return None
 
-        headline = ""
-        url = None
-        if headline_cell:
-            headline_link = headline_cell.find("a")
-            if headline_link:
-                headline = headline_link.text.strip()
-                href = headline_link.get("href", "")
-                if href:
-                    url = urljoin(ASX_BASE_URL, href)
-            else:
-                headline = headline_cell.text.strip()
-
-        if not headline:
+    def _estimate_pages_from_size(self, file_size: str) -> int | None:
+        """Estimate page count from file size string.
+        
+        Args:
+            file_size: Size string like "161KB" or "2MB".
+            
+        Returns:
+            Estimated page count or None.
+        """
+        if not file_size:
             return None
-
-        pages = None
-        if pages_cell:
-            pages_text = pages_cell.text.strip()
-            pages_match = re.search(r"(\d+)", pages_text)
-            if pages_match:
-                pages = int(pages_match.group(1))
-
-        sensitivity = self._detect_sensitivity(headline, row)
-
-        asx_id = None
-        if url:
-            id_match = re.search(r"id=(\d+)", url)
-            if id_match:
-                asx_id = id_match.group(1)
-
-        document_type = self._detect_document_type(headline)
-
-        return AnnouncementRecord(
-            symbol=symbol,
-            announced_at=announced_at,
-            headline=headline,
-            url=url,
-            document_type=document_type,
-            sensitivity=sensitivity,
-            pages=pages,
-            asx_announcement_id=asx_id,
-        )
-
-    def _parse_datetime(self, date_str: str, time_str: str) -> datetime:
-        """Parse date and time strings into datetime.
-
-        Args:
-            date_str: Date string (e.g., "30/01/2026").
-            time_str: Time string (e.g., "10:30").
-
-        Returns:
-            Parsed datetime.
-
-        Raises:
-            ValueError: If parsing fails.
-        """
-        date_str = date_str.strip()
-        time_str = time_str.strip() or "00:00"
-
-        for date_fmt in ["%d/%m/%Y", "%d/%m/%y", "%Y-%m-%d"]:
-            for time_fmt in ["%H:%M:%S", "%H:%M", "%I:%M%p", "%I:%M %p"]:
-                try:
-                    return datetime.strptime(f"{date_str} {time_str}", f"{date_fmt} {time_fmt}")
-                except ValueError:
-                    continue
-
-        for date_fmt in ["%d/%m/%Y", "%d/%m/%y", "%Y-%m-%d"]:
-            try:
-                return datetime.strptime(date_str, date_fmt)
-            except ValueError:
-                continue
-
-        raise ValueError(f"Cannot parse date: {date_str} {time_str}")
-
-    def _detect_sensitivity(self, headline: str, row: Any) -> str:
-        """Detect price sensitivity from headline or row styling.
-
-        Args:
-            headline: Announcement headline.
-            row: BeautifulSoup row element.
-
-        Returns:
-            Sensitivity level: "price_sensitive", "not_price_sensitive", or "unknown".
-        """
-        row_class = row.get("class", [])
-        if isinstance(row_class, list):
-            row_class_str = " ".join(row_class)
-        else:
-            row_class_str = str(row_class)
-
-        if "price-sensitive" in row_class_str.lower() or "pricesensitive" in row_class_str.lower():
-            return "price_sensitive"
-
-        sensitive_keywords = [
-            "trading halt", "takeover", "acquisition", "merger",
-            "earnings", "profit", "dividend", "capital raising",
-            "placement", "material", "significant", "downgrade",
-            "upgrade", "guidance", "restructure", "administration",
-        ]
-        headline_lower = headline.lower()
-        for keyword in sensitive_keywords:
-            if keyword in headline_lower:
-                return "price_sensitive"
-
-        return "unknown"
-
-    def _detect_document_type(self, headline: str) -> str | None:
-        """Detect document type from headline.
-
-        Args:
-            headline: Announcement headline.
-
-        Returns:
-            Document type or None.
-        """
-        headline_lower = headline.lower()
-
-        type_patterns = {
-            "Annual Report": ["annual report", "annual financial"],
-            "Half Year Report": ["half year", "half-year", "interim"],
-            "Quarterly Report": ["quarterly", "quarterly report", "appendix 4c", "appendix 5b"],
-            "Trading Halt": ["trading halt"],
-            "Dividend": ["dividend"],
-            "ASX Query": ["asx query", "aware letter"],
-            "Takeover": ["takeover", "acquisition", "merger"],
-            "Capital Raising": ["capital raising", "placement", "share purchase plan", "rights issue"],
-            "Director": ["director", "appendix 3x", "appendix 3y", "appendix 3z"],
-            "Change of Address": ["change of address", "change of name"],
-            "Constitution": ["constitution"],
-            "Cleansing Notice": ["cleansing notice"],
-        }
-
-        for doc_type, patterns in type_patterns.items():
-            for pattern in patterns:
-                if pattern in headline_lower:
-                    return doc_type
-
+            
+        try:
+            size_str = file_size.upper().strip()
+            if "KB" in size_str:
+                kb = int(size_str.replace("KB", "").strip())
+                return max(1, kb // 50)
+            elif "MB" in size_str:
+                mb = float(size_str.replace("MB", "").strip())
+                return max(1, int(mb * 20))
+        except (ValueError, TypeError):
+            pass
+        
         return None
 
-    def _process_announcement(self, ann: AnnouncementRecord) -> bool:
+    def _process_announcement(self, ann: AnnouncementRecord, instrument: dict[str, Any]) -> bool:
         """Process and store a single announcement.
 
         Args:
             ann: Announcement record to process.
+            instrument: Instrument dictionary with id.
 
         Returns:
             True if this is a new announcement, False if duplicate.
         """
-        instrument = self.db.get_instrument_by_symbol(ann.symbol)
-        if not instrument:
-            logger.debug("instrument_not_found", symbol=ann.symbol)
-            return False
-
         content_hash = hashlib.md5(
             f"{ann.symbol}:{ann.announced_at.isoformat()}:{ann.headline}".encode()
         ).hexdigest()

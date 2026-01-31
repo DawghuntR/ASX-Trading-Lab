@@ -34,10 +34,11 @@ CREATE INDEX IF NOT EXISTS idx_signals_date_type
 CREATE INDEX IF NOT EXISTS idx_signals_instrument_date 
     ON signals(instrument_id, signal_date DESC);
 
--- Partial index for recent signals (most queries are for recent data)
-CREATE INDEX IF NOT EXISTS idx_signals_recent 
-    ON signals(signal_date DESC, signal_strength DESC NULLS LAST)
-    WHERE signal_date >= CURRENT_DATE - INTERVAL '30 days';
+-- Index for recent signals sorted by date and strength
+-- Note: Cannot use partial index with CURRENT_DATE (not immutable)
+-- The query planner will use this index efficiently for date-range queries
+CREATE INDEX IF NOT EXISTS idx_signals_date_strength 
+    ON signals(signal_date DESC, signal_strength DESC NULLS LAST);
 
 -- ============================================================================
 -- ANNOUNCEMENTS INDEXES
@@ -64,7 +65,7 @@ CREATE INDEX IF NOT EXISTS idx_backtest_runs_completed
 
 -- Index for trade history queries
 CREATE INDEX IF NOT EXISTS idx_backtest_trades_run_date 
-    ON backtest_trades(backtest_run_id, trade_date);
+    ON backtest_trades(backtest_run_id, entry_date);
 
 -- ============================================================================
 -- PAPER TRADING INDEXES
@@ -84,26 +85,34 @@ CREATE INDEX IF NOT EXISTS idx_paper_orders_pending
 -- ============================================================================
 -- JOB RUNS INDEXES (Observability)
 -- Support health checks and troubleshooting
+-- Note: Only created if job_runs table exists (from migration 011)
 -- ============================================================================
 
--- Index for recent job runs
-CREATE INDEX IF NOT EXISTS idx_job_runs_recent 
-    ON job_runs(job_name, started_at DESC);
-
--- Index for failed jobs
-CREATE INDEX IF NOT EXISTS idx_job_runs_failed 
-    ON job_runs(status, started_at DESC) 
-    WHERE status = 'failure';
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'job_runs') THEN
+        CREATE INDEX IF NOT EXISTS idx_job_runs_recent 
+            ON job_runs(job_name, started_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_job_runs_failed 
+            ON job_runs(status, started_at DESC) 
+            WHERE status = 'failure';
+    END IF;
+END $$;
 
 -- ============================================================================
 -- DATA QUALITY INDEXES
 -- Support unresolved issues lookup
+-- Note: Only created if data_quality_issues table exists (from migration 011)
 -- ============================================================================
 
--- Index for unresolved issues
-CREATE INDEX IF NOT EXISTS idx_data_quality_unresolved 
-    ON data_quality_issues(check_type, check_date DESC) 
-    WHERE resolved_at IS NULL;
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'data_quality_issues') THEN
+        CREATE INDEX IF NOT EXISTS idx_data_quality_unresolved 
+            ON data_quality_issues(check_type, check_date DESC) 
+            WHERE resolved_at IS NULL;
+    END IF;
+END $$;
 
 -- ============================================================================
 -- STATISTICS AND MAINTENANCE
@@ -123,4 +132,4 @@ ANALYZE paper_orders;
 -- Comments
 COMMENT ON INDEX idx_daily_prices_instrument_date_desc IS 'Optimizes symbol price history queries';
 COMMENT ON INDEX idx_daily_prices_covering IS 'Covering index to avoid table lookups for common price queries';
-COMMENT ON INDEX idx_signals_recent IS 'Partial index for recent signals (30 days) - most common query window';
+COMMENT ON INDEX idx_signals_date_strength IS 'Index for signals sorted by date and strength - supports dashboard queries';
