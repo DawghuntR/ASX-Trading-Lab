@@ -1,7 +1,7 @@
 ---
 id: 037
 name: Backups, Restore, and Data Retention
-status: Planned
+status: Completed
 ---
 
 # 037 - Backups, Restore, and Data Retention

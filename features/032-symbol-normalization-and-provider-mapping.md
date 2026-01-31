@@ -1,7 +1,7 @@
 ---
 id: 032
 name: Symbol Normalization & Provider Mapping
-status: Planned
+status: Completed
 ---
 
 # 032 - Symbol Normalization & Provider Mapping

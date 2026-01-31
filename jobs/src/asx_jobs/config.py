@@ -32,6 +32,17 @@ class YahooConfig:
 
 
 @dataclass
+class ProviderConfig:
+    """Price data provider configuration."""
+
+    default_provider: str = "yahoo"
+    fallback_provider: str = "scraping"
+    fallback_enabled: bool = True
+    scraping_rate_limit_delay: float = 2.0
+    scraping_timeout: int = 30
+
+
+@dataclass
 class JobConfig:
     """Job runner configuration."""
 
@@ -47,6 +58,7 @@ class Config:
 
     supabase: SupabaseConfig
     yahoo: YahooConfig = field(default_factory=YahooConfig)
+    provider: ProviderConfig = field(default_factory=ProviderConfig)
     job: JobConfig = field(default_factory=JobConfig)
 
     def validate(self) -> None:
@@ -83,6 +95,14 @@ def load_config(env_file: Path | None = None) -> Config:
         timeout=int(os.getenv("YAHOO_TIMEOUT", "30")),
     )
 
+    provider_config = ProviderConfig(
+        default_provider=os.getenv("PRICE_PROVIDER", "yahoo"),
+        fallback_provider=os.getenv("PRICE_PROVIDER_FALLBACK", "scraping"),
+        fallback_enabled=os.getenv("PRICE_PROVIDER_FALLBACK_ENABLED", "true").lower() == "true",
+        scraping_rate_limit_delay=float(os.getenv("SCRAPING_RATE_LIMIT_DELAY", "2.0")),
+        scraping_timeout=int(os.getenv("SCRAPING_TIMEOUT", "30")),
+    )
+
     job_config = JobConfig(
         log_level=os.getenv("ASX_JOBS_LOG_LEVEL", "INFO"),
         batch_size=int(os.getenv("ASX_JOBS_BATCH_SIZE", "50")),
@@ -93,5 +113,6 @@ def load_config(env_file: Path | None = None) -> Config:
     return Config(
         supabase=supabase_config,
         yahoo=yahoo_config,
+        provider=provider_config,
         job=job_config,
     )

@@ -1,7 +1,7 @@
 ---
 id: 001
 name: GitHub Pages Web App + Homelab Signal Platform
-status: Planned
+status: Completed
 ---
 
 # 001 - GitHub Pages Web App + Homelab Signal Platform

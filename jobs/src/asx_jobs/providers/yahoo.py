@@ -11,21 +11,9 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from asx_jobs.config import YahooConfig
 from asx_jobs.logging import get_logger
+from asx_jobs.providers.base import BasePriceProvider, PriceBar
 
 logger = get_logger(__name__)
-
-
-@dataclass
-class PriceBar:
-    """Single day price bar."""
-
-    trade_date: date
-    open: float | None
-    high: float | None
-    low: float | None
-    close: float
-    volume: int
-    adjusted_close: float | None
 
 
 @dataclass
@@ -71,7 +59,7 @@ def denormalize_asx_symbol(yahoo_symbol: str) -> str:
     return yahoo_symbol
 
 
-class YahooFinanceProvider:
+class YahooFinanceProvider(BasePriceProvider):
     """Yahoo Finance data provider for ASX stocks."""
 
     def __init__(self, config: YahooConfig | None = None) -> None:
@@ -86,6 +74,10 @@ class YahooFinanceProvider:
             rate_limit_delay=self.config.rate_limit_delay,
             batch_size=self.config.batch_size,
         )
+
+    @property
+    def name(self) -> str:
+        return "yahoo"
 
     def _rate_limit(self) -> None:
         """Apply rate limiting delay."""

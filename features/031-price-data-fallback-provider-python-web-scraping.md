@@ -1,7 +1,7 @@
 ---
 id: 031
 name: Price Data Fallback Provider (Python Web Scraping)
-status: Planned
+status: Completed
 ---
 
 # 031 - Price Data Fallback Provider (Python Web Scraping)
