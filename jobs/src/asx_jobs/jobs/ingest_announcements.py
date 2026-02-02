@@ -212,6 +212,30 @@ class IngestAnnouncementsJob(BaseJob):
             logger.debug("symbol_not_found_in_api", symbol=symbol)
             return []
 
+        if response.status_code == 400:
+            error_body = ""
+            try:
+                error_data = response.json()
+                error_body = error_data.get("error", {}).get("message", "")
+            except Exception:
+                error_body = response.text[:200]
+
+            if "symbol not found" in error_body.lower():
+                logger.info(
+                    "symbol_delisted_or_invalid",
+                    symbol=symbol,
+                    reason="ASX API reports symbol not found (likely delisted/merged)",
+                )
+                return []
+
+            logger.warning(
+                "api_bad_request",
+                symbol=symbol,
+                status_code=response.status_code,
+                error=error_body,
+            )
+            return []
+
         response.raise_for_status()
 
         data = response.json()

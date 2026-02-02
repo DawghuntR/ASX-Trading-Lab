@@ -207,7 +207,7 @@ class PriceMovementSignalJob(BaseJob):
         if abs(change_pct) < threshold:
             return None
 
-        direction = "up" if change_pct > 0 else "down"
+        direction = "bullish" if change_pct > 0 else "bearish"
         strength = self._calc_strength(abs(change_pct), threshold, threshold * 3)
 
         return {
@@ -238,13 +238,13 @@ class PriceMovementSignalJob(BaseJob):
         if abs(change_pct) < threshold:
             return None
 
-        direction = "up" if change_pct > 0 else "down"
+        direction = "bullish" if change_pct > 0 else "bearish"
         strength = self._calc_strength(abs(change_pct), threshold, threshold * 2)
 
         return {
             "instrument_id": instrument_id,
             "signal_date": self.signal_date.isoformat(),
-            "signal_type": "momentum",
+            "signal_type": "price_movement",
             "direction": direction,
             "strength": strength,
             "trigger_price": price["close"],
@@ -273,7 +273,7 @@ class PriceMovementSignalJob(BaseJob):
         return {
             "instrument_id": instrument_id,
             "signal_date": self.signal_date.isoformat(),
-            "signal_type": "volume_spike",
+            "signal_type": "volume_surge",
             "direction": "neutral",
             "strength": strength,
             "trigger_price": price["close"],
